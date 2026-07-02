@@ -1,34 +1,49 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
+import { friendlyError } from '../../services/errors';
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async () => {
     setError(null);
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      setError('Please enter both your email and password.');
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      await login(email, password);
+      await login(trimmedEmail, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(friendlyError(err, 'Could not log you in. Please try again.'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Vaultr</Text>
+      <Text style={styles.subtitle}>Log in to your account</Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
         placeholderTextColor={colors.textMuted}
         autoCapitalize="none"
+        autoComplete="email"
         keyboardType="email-address"
         value={email}
+        editable={!isSubmitting}
         onChangeText={setEmail}
       />
       <TextInput
@@ -37,13 +52,23 @@ export default function LoginScreen() {
         placeholderTextColor={colors.textMuted}
         secureTextEntry
         value={password}
+        editable={!isSubmitting}
+        onSubmitEditing={handleLogin}
         onChangeText={setPassword}
       />
       {error && <Text style={styles.error}>{error}</Text>}
-      <Pressable style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Log in</Text>
+      <Pressable
+        style={[styles.button, isSubmitting && styles.buttonDisabled]}
+        onPress={handleLogin}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <ActivityIndicator color={colors.background} />
+        ) : (
+          <Text style={styles.buttonText}>Log in</Text>
+        )}
       </Pressable>
-      <Pressable onPress={() => router.push('/(auth)/signup')}>
+      <Pressable onPress={() => router.push('/(auth)/signup')} disabled={isSubmitting}>
         <Text style={styles.link}>Don&apos;t have an account? Sign up</Text>
       </Pressable>
     </View>
@@ -61,8 +86,14 @@ const styles = StyleSheet.create({
     color: colors.accentGold,
     fontSize: typography.sizes.xxl,
     fontWeight: typography.weights.bold,
-    marginBottom: spacing.xl,
     textAlign: 'center',
+  },
+  subtitle: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.sm,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
   },
   input: {
     backgroundColor: colors.surface,
@@ -80,6 +111,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     alignItems: 'center',
     marginTop: spacing.sm,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: colors.background,
