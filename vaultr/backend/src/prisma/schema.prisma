@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  SAVINGS
+  CHEQUING
+  TFSA
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  accounts     Account[]
+  transactions Transaction[]
+  goals        Goal[]
+}
+
+model Account {
+  id        String      @id @default(uuid())
+  userId    String
+  type      AccountType
+  balance   Float       @default(0)
+  name      String
+  createdAt DateTime    @default(now())
+
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+  goals        Goal[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id           String          @id @default(uuid())
+  accountId    String
+  userId       String
+  amount       Float
+  type         TransactionType
+  category     String
+  merchantName String
+  description  String?
+  createdAt    DateTime        @default(now())
+
+  account Account @relation(fields: [accountId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([accountId])
+  @@index([userId])
+}
+
+model Goal {
+  id              String    @id @default(uuid())
+  userId          String
+  name            String
+  targetAmount    Float
+  currentAmount   Float     @default(0)
+  linkedAccountId String?
+  deadline        DateTime?
+  createdAt       DateTime  @default(now())
+
+  user          User     @relation(fields: [userId], references: [id])
+  linkedAccount Account? @relation(fields: [linkedAccountId], references: [id])
+
+  @@index([userId])
+}

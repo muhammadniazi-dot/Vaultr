@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Vaultr",
+    "slug": "vaultr",
+    "scheme": "vaultr",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0f0f0f",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#0f0f0f"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.vaultr.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Vaultr uses Face ID to securely unlock your account."
+      }
+    },
+    "android": {
+      "package": "com.vaultr.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-local-authentication",
+      "expo-asset"
+    ]
+  }
+}
