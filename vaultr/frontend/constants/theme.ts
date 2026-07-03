@@ -4,6 +4,10 @@ export const colors = {
   card: '#242424',
   border: '#2a2a2a',
   accentGold: '#c9a84c',
+  // Low-opacity tints of the accent for glows, focus rings, and decorative
+  // background shading — flat colors layered for depth, no gradients.
+  accentGoldFaint: 'rgba(201, 168, 76, 0.05)',
+  accentGoldSoft: 'rgba(201, 168, 76, 0.14)',
   positive: '#c9a84c',
   negative: '#888888',
   textPrimary: '#e0e0e0',
@@ -17,11 +21,14 @@ export const spacing = {
   md: 14,
   lg: 16,
   xl: 20,
+  xxl: 28,
+  xxxl: 40,
 };
 
 export const radius = {
   card: 14,
   button: 10,
+  pill: 999,
 };
 
 export const typography = {

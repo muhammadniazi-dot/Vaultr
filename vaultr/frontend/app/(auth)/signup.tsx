@@ -1,113 +1,202 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { friendlyError } from '../../services/errors';
+import { validateEmail, validateName, validatePassword } from '../../services/validation';
+import AuthTextField from '../../components/AuthTextField';
+import AuthButton from '../../components/AuthButton';
+import AuthBackdrop from '../../components/AuthBackdrop';
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+
+interface FieldErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+}
 
 export default function SignupScreen() {
   const { signup } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const validate = (): FieldErrors => ({
+    name: validateName(name),
+    email: validateEmail(email),
+    password: validatePassword(password, MIN_PASSWORD_LENGTH),
+  });
+
+  const revalidateIfAttempted = (next: Partial<{ name: string; email: string; password: string }>) => {
+    if (!hasAttemptedSubmit) return;
+    setFieldErrors({
+      name: validateName(next.name ?? name),
+      email: validateEmail(next.email ?? email),
+      password: validatePassword(next.password ?? password, MIN_PASSWORD_LENGTH),
+    });
+  };
+
   const handleSignup = async () => {
-    setError(null);
+    setAuthError(null);
+    setHasAttemptedSubmit(true);
 
-    const trimmedName = name.trim();
-    const trimmedEmail = email.trim();
-
-    if (!trimmedName || !trimmedEmail || !password) {
-      setError('Please fill in your name, email, and password.');
-      return;
-    }
-    if (!EMAIL_PATTERN.test(trimmedEmail)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Your password must be at least 8 characters long.');
-      return;
-    }
+    const errors = validate();
+    setFieldErrors(errors);
+    if (errors.name || errors.email || errors.password) return;
 
     setIsSubmitting(true);
     try {
-      await signup(trimmedEmail, password, trimmedName);
+      await signup(email.trim(), password, name.trim());
     } catch (err) {
-      setError(friendlyError(err, 'Could not create your account. Please try again.'));
+      setAuthError(friendlyError(err, 'Could not create your account. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Create account</Text>
-      <Text style={styles.subtitle}>Start banking with Vaultr</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Full name"
-        placeholderTextColor={colors.textMuted}
-        autoComplete="name"
-        value={name}
-        editable={!isSubmitting}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor={colors.textMuted}
-        autoCapitalize="none"
-        autoComplete="email"
-        keyboardType="email-address"
-        value={email}
-        editable={!isSubmitting}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password (at least 8 characters)"
-        placeholderTextColor={colors.textMuted}
-        secureTextEntry
-        value={password}
-        editable={!isSubmitting}
-        onSubmitEditing={handleSignup}
-        onChangeText={setPassword}
-      />
-      {error && <Text style={styles.error}>{error}</Text>}
-      <Pressable
-        style={[styles.button, isSubmitting && styles.buttonDisabled]}
-        onPress={handleSignup}
-        disabled={isSubmitting}
+    <SafeAreaView style={styles.screen}>
+      <AuthBackdrop />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        {isSubmitting ? (
-          <ActivityIndicator color={colors.background} />
-        ) : (
-          <Text style={styles.buttonText}>Sign up</Text>
-        )}
-      </Pressable>
-      <Pressable onPress={() => router.push('/(auth)/login')} disabled={isSubmitting}>
-        <Text style={styles.link}>Already have an account? Log in</Text>
-      </Pressable>
+        <View style={styles.card}>
+          <View style={styles.brandMark}>
+            <Text style={styles.brandMarkText}>V</Text>
+          </View>
+          <Text style={styles.title}>Create your account</Text>
+          <Text style={styles.subtitle}>Start banking with Vaultr</Text>
+
+          <View style={styles.form}>
+            <AuthTextField
+              label="Full name"
+              placeholder="Jane Doe"
+              autoComplete="name"
+              textContentType="name"
+              value={name}
+              editable={!isSubmitting}
+              error={fieldErrors.name}
+              onChangeText={(value) => {
+                setName(value);
+                revalidateIfAttempted({ name: value });
+              }}
+              onBlur={() => revalidateIfAttempted({})}
+            />
+            <AuthTextField
+              label="Email"
+              placeholder="you@example.com"
+              autoCapitalize="none"
+              autoComplete="email"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              value={email}
+              editable={!isSubmitting}
+              error={fieldErrors.email}
+              onChangeText={(value) => {
+                setEmail(value);
+                revalidateIfAttempted({ email: value });
+              }}
+              onBlur={() => revalidateIfAttempted({})}
+            />
+            <AuthTextField
+              label="Password"
+              placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+              secureTextEntry
+              textContentType="newPassword"
+              value={password}
+              editable={!isSubmitting}
+              error={fieldErrors.password}
+              onChangeText={(value) => {
+                setPassword(value);
+                revalidateIfAttempted({ password: value });
+              }}
+              onBlur={() => revalidateIfAttempted({})}
+              onSubmitEditing={handleSignup}
+              returnKeyType="go"
+            />
+
+            {authError ? (
+              <View style={styles.authErrorBanner} accessibilityRole="alert">
+                <Text style={styles.authErrorText}>{authError}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.submitSpacing}>
+              <AuthButton title="Sign up" onPress={handleSignup} loading={isSubmitting} />
+            </View>
+          </View>
+
+          <View style={styles.switchRow}>
+            <Text style={styles.switchText}>Already have an account? </Text>
+            <Pressable onPress={() => router.push('/(auth)/login')} disabled={isSubmitting} hitSlop={8}>
+              <Text style={styles.switchLink}>Log in</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxxl,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: colors.card,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.card,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: spacing.xxxl,
+    ...Platform.select({
+      web: { boxShadow: '0px 20px 60px rgba(0, 0, 0, 0.45)' },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.35,
+        shadowRadius: 24,
+        elevation: 6,
+      },
+    }),
+  },
+  brandMark: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.button,
+    backgroundColor: colors.accentGold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
+  },
+  brandMarkText: {
+    color: colors.background,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
   },
   title: {
-    color: colors.accentGold,
-    fontSize: typography.sizes.xxl,
+    color: colors.textPrimary,
+    fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     textAlign: 'center',
   },
@@ -116,40 +205,39 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     textAlign: 'center',
     marginTop: spacing.xs,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
-  input: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
+  form: {
+    width: '100%',
+  },
+  authErrorBanner: {
+    backgroundColor: 'rgba(248, 113, 113, 0.1)',
+    borderColor: colors.danger,
     borderWidth: 1,
     borderRadius: radius.button,
-    color: colors.textPrimary,
     padding: spacing.md,
     marginBottom: spacing.md,
-    fontSize: typography.sizes.md,
   },
-  button: {
-    backgroundColor: colors.accentGold,
-    borderRadius: radius.button,
-    padding: spacing.md,
-    alignItems: 'center',
+  authErrorText: {
+    color: colors.danger,
+    fontSize: typography.sizes.sm,
+  },
+  submitSpacing: {
     marginTop: spacing.sm,
   },
-  buttonDisabled: {
-    opacity: 0.6,
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginTop: spacing.xxl,
   },
-  buttonText: {
-    color: colors.background,
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.semibold,
-  },
-  error: {
-    color: colors.danger,
-    marginBottom: spacing.sm,
-  },
-  link: {
+  switchText: {
     color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.lg,
+    fontSize: typography.sizes.sm,
+  },
+  switchLink: {
+    color: colors.accentGold,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
   },
 });
