@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../constants/theme';
 import ChatBubble from '../components/ChatBubble';
 import { getChatHistory, sendChatMessage } from '../services/claude';
@@ -31,37 +32,42 @@ export default function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <Text style={styles.title}>Vaultr Assistant</Text>
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ChatBubble message={item} />}
-        contentContainerStyle={styles.messages}
-      />
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Ask about your finances..."
-          placeholderTextColor={colors.textMuted}
-          value={input}
-          onChangeText={setInput}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <Text style={styles.title}>Vaultr Assistant</Text>
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <ChatBubble message={item} />}
+          contentContainerStyle={styles.messages}
         />
-        <Pressable style={styles.sendButton} onPress={handleSend}>
-          <Text style={styles.sendButtonText}>Send</Text>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+        <View style={styles.inputRow}>
+          <TextInput
+            style={styles.input}
+            placeholder="Ask about your finances..."
+            placeholderTextColor={colors.textMuted}
+            value={input}
+            onChangeText={setInput}
+          />
+          <Pressable style={styles.sendButton} onPress={handleSend}>
+            <Text style={styles.sendButtonText}>Send</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  container: {
+    flex: 1,
     paddingHorizontal: spacing.lg,
   },
   title: {

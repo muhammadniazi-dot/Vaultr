@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../constants/theme';
 import GoalCard from '../../components/GoalCard';
 import api from '../../services/api';
@@ -20,7 +21,7 @@ export default function GoalsScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>Goals</Text>
       <FlatList
         data={goals}
@@ -29,7 +30,7 @@ export default function GoalsScreen() {
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         ListEmptyComponent={<Text style={styles.empty}>No goals yet</Text>}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

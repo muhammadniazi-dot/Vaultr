@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -11,7 +12,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>Profile</Text>
       <View style={styles.card}>
         <Text style={styles.name}>{user?.name ?? 'Guest'}</Text>
@@ -20,7 +21,7 @@ export default function ProfileScreen() {
       <Pressable style={styles.button} onPress={handleLogout}>
         <Text style={styles.buttonText}>Log out</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

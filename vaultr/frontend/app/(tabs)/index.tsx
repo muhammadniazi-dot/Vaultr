@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../constants/theme';
 import BalanceHeader from '../../components/BalanceHeader';
 import AccountCard from '../../components/AccountCard';
@@ -28,7 +29,7 @@ export default function HomeScreen() {
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <BalanceHeader totalBalance={totalBalance} />
       {isLoading ? (
         <ActivityIndicator color={colors.accentGold} style={styles.center} />
@@ -43,7 +44,7 @@ export default function HomeScreen() {
           ListEmptyComponent={<Text style={styles.empty}>You don&apos;t have any accounts yet.</Text>}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 

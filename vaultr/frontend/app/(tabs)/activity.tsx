@@ -1,5 +1,6 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '../../constants/theme';
 import TransactionRow from '../../components/TransactionRow';
 import { useTransactions } from '../../hooks/useTransactions';
@@ -8,7 +9,7 @@ export default function ActivityScreen() {
   const { transactions, isLoading } = useTransactions();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>Activity</Text>
       <FlatList
         data={transactions}
@@ -18,7 +19,7 @@ export default function ActivityScreen() {
           !isLoading ? <Text style={styles.empty}>No transactions yet</Text> : null
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
@@ -32,7 +33,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Vaultr</Text>
       <Text style={styles.subtitle}>Log in to your account</Text>
       <TextInput
@@ -71,7 +72,7 @@ export default function LoginScreen() {
       <Pressable onPress={() => router.push('/(auth)/signup')} disabled={isSubmitting}>
         <Text style={styles.link}>Don&apos;t have an account? Sign up</Text>
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 

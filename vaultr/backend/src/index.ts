@@ -13,6 +13,10 @@ const PORT = process.env.PORT ?? 4000;
 app.use(cors());
 app.use(express.json());
 
+app.get('/', (_req, res) => {
+  res.json({ name: 'Vaultr API', status: 'ok' });
+});
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
