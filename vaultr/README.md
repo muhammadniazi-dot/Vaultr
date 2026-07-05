@@ -36,5 +36,9 @@ npm install
 cp .env.example .env   # fill in DATABASE_URL, JWT_SECRET, CLAUDE_API_KEY
 npx prisma generate
 npx prisma migrate dev --name init
+npm run seed            # optional: adds demo accounts + transactions for existing users
 npm run dev
 ```
+
+See [backend/TESTING.md](./backend/TESTING.md) for manual curl-based verification of the
+accounts/transactions endpoints (no test framework is set up yet).

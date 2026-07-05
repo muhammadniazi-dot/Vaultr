@@ -27,6 +27,14 @@ app.use('/transactions', transactionsRoutes);
 app.use('/goals', goalsRoutes);
 app.use('/assistant', assistantRoutes);
 
+// Catches errors forwarded by asyncHandler-wrapped routes (and anything else
+// that calls next(err)) so unexpected/DB errors return a clean 500 instead of
+// hanging the request.
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 app.listen(PORT, () => {
   console.log(`Vaultr API listening on port ${PORT}`);
 });

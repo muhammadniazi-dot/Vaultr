@@ -18,6 +18,12 @@ enum TransactionType {
   DEBIT
 }
 
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -32,12 +38,18 @@ model User {
 }
 
 model Account {
-  id        String      @id @default(uuid())
-  userId    String
-  type      AccountType
-  balance   Float       @default(0)
-  name      String
-  createdAt DateTime    @default(now())
+  id                 String      @id @default(uuid())
+  userId             String
+  type               AccountType
+  balance            Float       @default(0)
+  name               String
+  // Cosmetic last-4 shown in the UI, generated at creation — not a real bank
+  // account number (this is a demo app with no real account numbering).
+  accountNumberLast4 String
+  currency           String      @default("CAD")
+  institutionName    String      @default("Vaultr")
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   user         User          @relation(fields: [userId], references: [id])
   transactions Transaction[]
@@ -47,15 +59,20 @@ model Account {
 }
 
 model Transaction {
-  id           String          @id @default(uuid())
+  id           String            @id @default(uuid())
   accountId    String
   userId       String
   amount       Float
   type         TransactionType
+  status       TransactionStatus @default(COMPLETED)
   category     String
   merchantName String
   description  String?
-  createdAt    DateTime        @default(now())
+  // Optional display name for the counterparty on a transfer/e-transfer.
+  recipient    String?
+  currency     String            @default("CAD")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   account Account @relation(fields: [accountId], references: [id])
   user    User    @relation(fields: [userId], references: [id])

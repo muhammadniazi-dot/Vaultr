@@ -75,8 +75,8 @@ vaultr/
 
 ## Database schema (Prisma)
 - **User**: `id, email, passwordHash, name, avatarUrl, createdAt` — has many Accounts, Transactions, Goals
-- **Account**: `id, userId, type (SAVINGS | CHEQUING | TFSA), balance, name, createdAt` — belongs to User
-- **Transaction**: `id, accountId, userId, amount, type (CREDIT | DEBIT), category, merchantName, description, createdAt` — belongs to Account and User
+- **Account**: `id, userId, type (SAVINGS | CHEQUING | TFSA), balance, name, accountNumberLast4, currency (default CAD), institutionName (default "Vaultr"), createdAt, updatedAt` — belongs to User
+- **Transaction**: `id, accountId, userId, amount, type (CREDIT | DEBIT), status (PENDING | COMPLETED | FAILED, default COMPLETED), category, merchantName, description, recipient, currency (default CAD), createdAt, updatedAt` — belongs to Account and User
 - **Goal**: `id, userId, name, targetAmount, currentAmount, linkedAccountId, deadline, createdAt` — belongs to User, optionally linked to an Account
 
 ## API routes
@@ -86,11 +86,11 @@ to the authenticated user.
 - `GET /health`
 - `POST /auth/signup` — body: `{ email, password, name }`
 - `POST /auth/login` — body: `{ email, password }`
-- `GET /accounts`
+- `GET /accounts` — returns the user's accounts, shaped with `balance`, `availableBalance`, `accountNumberLast4`, `currency`, `institutionName`
 - `POST /accounts` — body: `{ type, name, balance? }`
 - `GET /accounts/:id`
-- `GET /transactions?accountId=`
-- `POST /transactions` — body: `{ accountId, amount, type, category, merchantName, description? }`
+- `GET /transactions?accountId=&limit=&offset=&type=&status=` — sorted newest first. `type` accepts `credit`/`debit` or the friendlier `deposit`/`withdrawal`/`transfer`/`payment`; `status` accepts `pending`/`completed`/`failed`
+- `POST /transactions` — body: `{ accountId, type, amount, title|merchantName, description?, category?, recipient? }`. Validates a positive amount and account ownership, atomically updates the account balance (credit adds, debit subtracts), rejects if the result would go negative, and returns `{ transaction, account }`
 - `GET /goals`
 - `POST /goals` — body: `{ name, targetAmount, currentAmount?, linkedAccountId?, deadline? }`
 - `PATCH /goals/:id`
