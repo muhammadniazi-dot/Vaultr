@@ -33,16 +33,36 @@ export async function getStoredUser(): Promise<User | null> {
   return raw ? (JSON.parse(raw) as User) : null;
 }
 
-export async function isBiometricAvailable(): Promise<boolean> {
-  const compatible = await LocalAuthentication.hasHardwareAsync();
-  const enrolled = await LocalAuthentication.isEnrolledAsync();
-  return compatible && enrolled;
+export type BiometricKind = 'face' | 'fingerprint' | 'generic' | 'none';
+
+/**
+ * Checks hardware support, enrollment, and which biometric type is available
+ * so the UI can show accurate wording (e.g. never say "Face ID" on a device
+ * that only has a fingerprint sensor).
+ */
+export async function getBiometricKind(): Promise<BiometricKind> {
+  const [compatible, enrolled] = await Promise.all([
+    LocalAuthentication.hasHardwareAsync(),
+    LocalAuthentication.isEnrolledAsync(),
+  ]);
+  if (!compatible || !enrolled) {
+    return 'none';
+  }
+
+  const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
+  if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+    return 'face';
+  }
+  if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+    return 'fingerprint';
+  }
+  return types.length > 0 ? 'generic' : 'none';
 }
 
-export async function authenticateWithBiometrics(): Promise<boolean> {
-  const result = await LocalAuthentication.authenticateAsync({
-    promptMessage: 'Unlock Vaultr',
+export async function authenticateWithBiometrics(): Promise<LocalAuthentication.LocalAuthenticationResult> {
+  return LocalAuthentication.authenticateAsync({
+    promptMessage: 'Log in to Vaultr',
     fallbackLabel: 'Use passcode',
+    cancelLabel: 'Cancel',
   });
-  return result.success;
 }

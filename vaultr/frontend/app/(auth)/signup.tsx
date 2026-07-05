@@ -9,6 +9,7 @@ import { validateEmail, validateName, validatePassword } from '../../services/va
 import AuthTextField from '../../components/AuthTextField';
 import AuthButton from '../../components/AuthButton';
 import AuthBackdrop from '../../components/AuthBackdrop';
+import BrandMark from '../../components/BrandMark';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -70,8 +71,8 @@ export default function SignupScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkText}>V</Text>
+          <View style={styles.brandMarkWrapper}>
+            <BrandMark />
           </View>
           <Text style={styles.title}>Create your account</Text>
           <Text style={styles.subtitle}>Start banking with Vaultr</Text>
@@ -179,20 +180,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  brandMark: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.button,
-    backgroundColor: colors.accentGold,
-    alignItems: 'center',
-    justifyContent: 'center',
+  brandMarkWrapper: {
     alignSelf: 'center',
     marginBottom: spacing.lg,
-  },
-  brandMarkText: {
-    color: colors.background,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
   },
   title: {
     color: colors.textPrimary,

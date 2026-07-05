@@ -8,7 +8,10 @@ export const colors = {
   // background shading — flat colors layered for depth, no gradients.
   accentGoldFaint: 'rgba(201, 168, 76, 0.05)',
   accentGoldSoft: 'rgba(201, 168, 76, 0.14)',
-  positive: '#c9a84c',
+  // Calm, desaturated green — reserved for deposits/positive amounts.
+  // Red (`danger`) stays reserved for true negative balances, errors, and alerts;
+  // ordinary spending uses `negative` (muted gray), not red, per design direction.
+  positive: '#4ADE80',
   negative: '#888888',
   textPrimary: '#e0e0e0',
   textMuted: '#555555',
@@ -26,7 +29,7 @@ export const spacing = {
 };
 
 export const radius = {
-  card: 14,
+  card: 20,
   button: 10,
   pill: 999,
 };

@@ -6,7 +6,7 @@ import GoalCard from '../../components/GoalCard';
 import api from '../../services/api';
 import type { Goal } from '../../types';
 
-export default function GoalsScreen() {
+export default function InvestmentsScreen() {
   const [goals, setGoals] = useState<Goal[]>([]);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export default function GoalsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.title}>Goals</Text>
+      <Text style={styles.title}>Goals & Investments</Text>
       <FlatList
         data={goals}
         keyExtractor={(item) => item.id}

@@ -11,9 +11,18 @@ import {
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
+  /** True if a token + user are already in Secure Store from a previous session. */
+  hasStoredSession: boolean;
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
+  /**
+   * Restores the session from the token/user already in Secure Store, without
+   * hitting the network. Used after a successful biometric check — the JWT was
+   * issued by a previous email/password login, biometrics just unlocks it again.
+   * Returns null (and leaves the user logged out) if nothing valid is stored.
+   */
+  restoreSession: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -21,13 +30,16 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasStoredSession, setHasStoredSession] = useState(false);
 
   useEffect(() => {
     (async () => {
       const [token, storedUser] = await Promise.all([getStoredToken(), getStoredUser()]);
-      if (token && storedUser) {
-        setUser(storedUser);
-      }
+      // Intentionally does NOT auto-restore `user` here. A stored token only
+      // means the login screen can offer biometric login as a shortcut — the
+      // session itself is restored explicitly via restoreSession(), either
+      // after a successful Face ID/Touch ID check or a fresh password login.
+      setHasStoredSession(Boolean(token && storedUser));
       setIsLoading(false);
     })();
   }, []);
@@ -47,10 +59,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await logoutRequest();
     setUser(null);
+    setHasStoredSession(false);
+  }, []);
+
+  const restoreSession = useCallback(async () => {
+    const [token, storedUser] = await Promise.all([getStoredToken(), getStoredUser()]);
+    if (token && storedUser) {
+      setUser(storedUser);
+      return storedUser;
+    }
+    return null;
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, hasStoredSession, login, signup, logout, restoreSession }}>
       {children}
     </AuthContext.Provider>
   );

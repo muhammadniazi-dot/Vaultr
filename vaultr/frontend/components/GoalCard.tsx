@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../constants/theme';
+import ProgressBar from './ProgressBar';
 import type { Goal } from '../types';
 
 interface GoalCardProps {
@@ -8,14 +10,17 @@ interface GoalCardProps {
 }
 
 export default function GoalCard({ goal }: GoalCardProps) {
-  const progress = Math.min(goal.currentAmount / goal.targetAmount, 1);
+  const progress = goal.targetAmount > 0 ? goal.currentAmount / goal.targetAmount : 0;
 
   return (
     <View style={styles.card}>
-      <Text style={styles.name}>{goal.name}</Text>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      <View style={styles.header}>
+        <View style={styles.iconWrapper}>
+          <Ionicons name="flag-outline" size={18} color={colors.accentGold} />
+        </View>
+        <Text style={styles.name}>{goal.name}</Text>
       </View>
+      <ProgressBar progress={progress} />
       <View style={styles.amountsRow}>
         <Text style={styles.currentAmount}>${goal.currentAmount.toFixed(2)}</Text>
         <Text style={styles.targetAmount}>of ${goal.targetAmount.toFixed(2)}</Text>
@@ -30,23 +35,27 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radius.card,
-    padding: spacing.md,
+    padding: spacing.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  iconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.button,
+    backgroundColor: colors.accentGoldFaint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
   },
   name: {
     color: colors.textPrimary,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: radius.button,
-    backgroundColor: colors.surface,
-    marginTop: spacing.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.accentGold,
+    flex: 1,
   },
   amountsRow: {
     flexDirection: 'row',

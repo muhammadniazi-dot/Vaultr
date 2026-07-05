@@ -5,12 +5,12 @@ import { colors, spacing, typography } from '../../constants/theme';
 import TransactionRow from '../../components/TransactionRow';
 import { useTransactions } from '../../hooks/useTransactions';
 
-export default function ActivityScreen() {
+export default function PaymentsScreen() {
   const { transactions, isLoading } = useTransactions();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.title}>Activity</Text>
+      <Text style={styles.title}>Payments</Text>
       <FlatList
         data={transactions}
         keyExtractor={(item) => item.id}

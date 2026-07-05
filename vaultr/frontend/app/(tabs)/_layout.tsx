@@ -1,7 +1,16 @@
 import React from 'react';
 import { Redirect, Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
+function tabIcon(focused: IconName, unfocused: IconName) {
+  return ({ focused: isFocused, color, size }: { focused: boolean; color: string; size: number }) => (
+    <Ionicons name={isFocused ? focused : unfocused} color={color} size={size} />
+  );
+}
 
 export default function TabsLayout() {
   const { user, isLoading } = useAuth();
@@ -26,10 +35,20 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textMuted,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="activity" options={{ title: 'Activity' }} />
-      <Tabs.Screen name="goals" options={{ title: 'Goals' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: tabIcon('home', 'home-outline') }} />
+      <Tabs.Screen name="accounts" options={{ title: 'Accounts', tabBarIcon: tabIcon('wallet', 'wallet-outline') }} />
+      <Tabs.Screen
+        name="payments"
+        options={{ title: 'Payments', tabBarIcon: tabIcon('swap-horizontal', 'swap-horizontal-outline') }}
+      />
+      <Tabs.Screen
+        name="investments"
+        options={{ title: 'Investments', tabBarIcon: tabIcon('trending-up', 'trending-up-outline') }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: 'Profile', tabBarIcon: tabIcon('person', 'person-outline') }}
+      />
     </Tabs>
   );
 }

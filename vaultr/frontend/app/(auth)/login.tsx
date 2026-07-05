@@ -9,6 +9,8 @@ import { validateEmail, validatePassword } from '../../services/validation';
 import AuthTextField from '../../components/AuthTextField';
 import AuthButton from '../../components/AuthButton';
 import AuthBackdrop from '../../components/AuthBackdrop';
+import BiometricLoginButton from '../../components/BiometricLoginButton';
+import BrandMark from '../../components/BrandMark';
 
 interface FieldErrors {
   email?: string;
@@ -23,6 +25,8 @@ export default function LoginScreen() {
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBiometricBusy, setIsBiometricBusy] = useState(false);
+  const isBusy = isSubmitting || isBiometricBusy;
 
   const validate = (): FieldErrors => ({
     email: validateEmail(email),
@@ -64,8 +68,8 @@ export default function LoginScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.card}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkText}>V</Text>
+          <View style={styles.brandMarkWrapper}>
+            <BrandMark />
           </View>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>Log in to manage your accounts</Text>
@@ -79,7 +83,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               textContentType="emailAddress"
               value={email}
-              editable={!isSubmitting}
+              editable={!isBusy}
               error={fieldErrors.email}
               onChangeText={(value) => {
                 setEmail(value);
@@ -93,7 +97,7 @@ export default function LoginScreen() {
               secureTextEntry
               textContentType="password"
               value={password}
-              editable={!isSubmitting}
+              editable={!isBusy}
               error={fieldErrors.password}
               onChangeText={(value) => {
                 setPassword(value);
@@ -111,13 +115,15 @@ export default function LoginScreen() {
             ) : null}
 
             <View style={styles.submitSpacing}>
-              <AuthButton title="Log in" onPress={handleLogin} loading={isSubmitting} />
+              <AuthButton title="Log in" onPress={handleLogin} loading={isSubmitting} disabled={isBiometricBusy} />
             </View>
+
+            <BiometricLoginButton onError={setAuthError} onBusyChange={setIsBiometricBusy} />
           </View>
 
           <View style={styles.switchRow}>
             <Text style={styles.switchText}>Don&apos;t have an account? </Text>
-            <Pressable onPress={() => router.push('/(auth)/signup')} disabled={isSubmitting} hitSlop={8}>
+            <Pressable onPress={() => router.push('/(auth)/signup')} disabled={isBusy} hitSlop={8}>
               <Text style={styles.switchLink}>Sign up</Text>
             </Pressable>
           </View>
@@ -159,20 +165,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  brandMark: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.button,
-    backgroundColor: colors.accentGold,
-    alignItems: 'center',
-    justifyContent: 'center',
+  brandMarkWrapper: {
     alignSelf: 'center',
     marginBottom: spacing.lg,
-  },
-  brandMarkText: {
-    color: colors.background,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
   },
   title: {
     color: colors.textPrimary,

@@ -53,3 +53,17 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
 }
+
+/**
+ * Upcoming bill / scheduled payment shown on the dashboard. There is no
+ * backend model for this yet (see constants/mockBills.ts) — this type
+ * documents the shape a future `/bills` endpoint should return.
+ */
+export interface Bill {
+  id: string;
+  name: string;
+  category: 'credit_card' | 'utility' | 'subscription' | 'loan' | 'transfer';
+  amount: number;
+  dueDate: string;
+  isAutopay: boolean;
+}
