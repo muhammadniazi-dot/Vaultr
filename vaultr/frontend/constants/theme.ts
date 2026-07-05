@@ -35,7 +35,10 @@ export const radius = {
 };
 
 export const typography = {
-  fontFamily: undefined, // System default (SF Pro on iOS)
+  // Loaded in app/_layout.tsx via expo-font. Falls back to the system font
+  // (SF Pro on iOS) automatically if loading ever fails — nothing else here
+  // needs to change for that fallback to work.
+  fontFamily: 'Satoshi-Variable',
   sizes: {
     xs: 12,
     sm: 14,

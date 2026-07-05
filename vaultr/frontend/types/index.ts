@@ -1,6 +1,8 @@
 export type AccountType = 'SAVINGS' | 'CHEQUING' | 'TFSA';
 
 export type TransactionType = 'CREDIT' | 'DEBIT';
+export type TransactionDirection = 'inflow' | 'outflow';
+export type TransactionStatus = 'pending' | 'completed' | 'failed';
 
 export interface User {
   id: string;
@@ -17,6 +19,13 @@ export interface Account {
   balance: number;
   name: string;
   createdAt: string;
+  // Added by the backend's response shaping — optional here so any code
+  // written against the older shape keeps compiling unchanged.
+  accountNumberLast4?: string;
+  availableBalance?: number;
+  currency?: string;
+  institutionName?: string;
+  updatedAt?: string;
 }
 
 export interface Transaction {
@@ -29,6 +38,15 @@ export interface Transaction {
   merchantName: string;
   description?: string | null;
   createdAt: string;
+  // Added by the backend's response shaping — optional here so any code
+  // written against the older shape keeps compiling unchanged.
+  direction?: TransactionDirection;
+  title?: string;
+  currency?: string;
+  status?: TransactionStatus;
+  recipient?: string | null;
+  date?: string;
+  updatedAt?: string;
 }
 
 export interface Goal {

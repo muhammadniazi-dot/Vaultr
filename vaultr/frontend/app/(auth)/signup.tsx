@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { friendlyError } from '../../services/errors';
+import { getBiometricKind, type BiometricKind } from '../../services/auth';
 import { validateEmail, validateName, validatePassword } from '../../services/validation';
 import AuthTextField from '../../components/AuthTextField';
 import AuthButton from '../../components/AuthButton';
@@ -19,8 +20,14 @@ interface FieldErrors {
   password?: string;
 }
 
+const PROMPT_COPY_BY_KIND: Record<Exclude<BiometricKind, 'none'>, { title: string; label: string }> = {
+  face: { title: 'Enable Face ID?', label: 'Face ID' },
+  fingerprint: { title: 'Enable Touch ID?', label: 'Touch ID' },
+  generic: { title: 'Enable biometric login?', label: 'biometric login' },
+};
+
 export default function SignupScreen() {
-  const { signup } = useAuth();
+  const { signup, enableBiometricLogin } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,11 +62,32 @@ export default function SignupScreen() {
     setIsSubmitting(true);
     try {
       await signup(email.trim(), password, name.trim());
+      await promptToEnableBiometricLogin();
     } catch (err) {
       setAuthError(friendlyError(err, 'Could not create your account. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const promptToEnableBiometricLogin = async () => {
+    const kind = await getBiometricKind();
+    if (kind === 'none') return;
+
+    const { title, label } = PROMPT_COPY_BY_KIND[kind];
+    Alert.alert(title, `Use ${label} to log in faster next time. You can turn this off anytime in your profile.`, [
+      { text: 'Not now', style: 'cancel' },
+      {
+        text: 'Enable',
+        onPress: () => {
+          enableBiometricLogin().catch(() => {
+            // Best-effort — the account was already created successfully, so
+            // failing to opt in to biometrics shouldn't block or alarm the
+            // user. They can still enable it later from Profile.
+          });
+        },
+      },
+    ]);
   };
 
   return (

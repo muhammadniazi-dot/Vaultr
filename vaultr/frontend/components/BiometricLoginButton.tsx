@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
@@ -42,33 +43,40 @@ interface BiometricLoginButtonProps {
 }
 
 export default function BiometricLoginButton({ onError, onBusyChange }: BiometricLoginButtonProps) {
-  const { hasStoredSession, isLoading: isAuthLoading, restoreSession } = useAuth();
+  const { canUseBiometricLogin, isLoading: isAuthLoading, restoreSession } = useAuth();
   const [kind, setKind] = useState<BiometricKind>('none');
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(true);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  useEffect(() => {
-    if (isAuthLoading) return;
+  // Re-checks hardware/enrollment every time this screen is focused (not
+  // just on first mount) — the login screen can stay mounted across
+  // navigation (e.g. going to Signup and back), and biometric enrollment or
+  // the user's stored preference can change in the background (Settings app,
+  // enabling it from Profile, etc.), so a mount-only check can go stale.
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthLoading) return;
 
-    if (!hasStoredSession) {
-      setIsCheckingAvailability(false);
-      setKind('none');
-      return;
-    }
-
-    let cancelled = false;
-    setIsCheckingAvailability(true);
-    (async () => {
-      const detected = await getBiometricKind();
-      if (!cancelled) {
-        setKind(detected);
+      if (!canUseBiometricLogin) {
         setIsCheckingAvailability(false);
+        setKind('none');
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [hasStoredSession, isAuthLoading]);
+
+      let cancelled = false;
+      setIsCheckingAvailability(true);
+      (async () => {
+        const detected = await getBiometricKind();
+        if (!cancelled) {
+          setKind(detected);
+          setIsCheckingAvailability(false);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [canUseBiometricLogin, isAuthLoading])
+  );
 
   if (isAuthLoading || isCheckingAvailability || kind === 'none') {
     return null;
@@ -79,12 +87,12 @@ export default function BiometricLoginButton({ onError, onBusyChange }: Biometri
     setIsAuthenticating(true);
     onBusyChange?.(true);
     try {
-      const result = await authenticateWithBiometrics();
+      const result = await authenticateWithBiometrics(kind);
 
       if (result.success) {
         const restoredUser = await restoreSession();
         if (!restoredUser) {
-          onError('Your session has expired. Please log in with your password.');
+          onError('Your biometric login has expired. Please log in with your password.');
         }
         return;
       }

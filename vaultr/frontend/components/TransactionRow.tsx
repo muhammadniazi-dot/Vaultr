@@ -18,6 +18,8 @@ function iconForCategory(category: string): keyof typeof Ionicons.glyphMap {
   if (key.includes('bill') || key.includes('utilit')) return 'flash-outline';
   if (key.includes('salary') || key.includes('payroll') || key.includes('income')) return 'cash-outline';
   if (key.includes('entertain') || key.includes('subscription')) return 'play-circle-outline';
+  if (key.includes('rent')) return 'home-outline';
+  if (key.includes('coffee')) return 'cafe-outline';
   return 'ellipse-outline';
 }
 
@@ -34,7 +36,14 @@ function formatDateTime(iso: string): string {
 export default function TransactionRow({ transaction }: TransactionRowProps) {
   const isCredit = transaction.type === 'CREDIT';
   const amountPrefix = isCredit ? '+' : '-';
-  const amountColor = isCredit ? colors.positive : colors.negative;
+  // Explicitly gold for incoming, muted gray for outgoing — this row's own
+  // choice, kept separate from the shared `colors.positive` token (green)
+  // used elsewhere on the dashboard, so this doesn't ripple into other
+  // screens that rely on that token meaning something else.
+  const amountColor = isCredit ? colors.accentGold : colors.negative;
+  const title = transaction.title ?? transaction.merchantName;
+  const isPending = transaction.status === 'pending';
+  const isFailed = transaction.status === 'failed';
 
   return (
     <View style={styles.row}>
@@ -43,15 +52,24 @@ export default function TransactionRow({ transaction }: TransactionRowProps) {
       </View>
       <View style={styles.details}>
         <Text style={styles.merchant} numberOfLines={1}>
-          {transaction.merchantName}
+          {title}
         </Text>
         <Text style={styles.meta} numberOfLines={1}>
-          {formatDateTime(transaction.createdAt)} · {transaction.category}
+          {formatDateTime(transaction.date ?? transaction.createdAt)} · {transaction.category}
         </Text>
       </View>
-      <Text style={[styles.amount, { color: amountColor }]}>
-        {amountPrefix}${Math.abs(transaction.amount).toFixed(2)}
-      </Text>
+      <View style={styles.amountColumn}>
+        <Text style={[styles.amount, { color: amountColor }]}>
+          {amountPrefix}${Math.abs(transaction.amount).toFixed(2)}
+        </Text>
+        {isPending || isFailed ? (
+          <View style={[styles.statusPill, isFailed && styles.statusPillFailed]}>
+            <Text style={[styles.statusText, isFailed && styles.statusTextFailed]}>
+              {isFailed ? 'Failed' : 'Pending'}
+            </Text>
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -78,16 +96,42 @@ const styles = StyleSheet.create({
   },
   merchant: {
     color: colors.textPrimary,
+    fontFamily: typography.fontFamily,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.medium,
   },
   meta: {
     color: colors.textMuted,
+    fontFamily: typography.fontFamily,
     fontSize: typography.sizes.xs,
     marginTop: spacing.xs,
   },
+  amountColumn: {
+    alignItems: 'flex-end',
+  },
   amount: {
+    fontFamily: typography.fontFamily,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
+  },
+  statusPill: {
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accentGoldFaint,
+  },
+  statusPillFailed: {
+    backgroundColor: 'rgba(248, 113, 113, 0.1)',
+  },
+  statusText: {
+    color: colors.accentGold,
+    fontFamily: typography.fontFamily,
+    fontSize: 10,
+    fontWeight: typography.weights.semibold,
+    textTransform: 'uppercase',
+  },
+  statusTextFailed: {
+    color: colors.danger,
   },
 });

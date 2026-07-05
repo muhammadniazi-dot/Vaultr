@@ -1,8 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { User } from '../types';
 import {
+  activateSession,
+  disableBiometricLogin as disableBiometricLoginRequest,
+  enableBiometricLogin as enableBiometricLoginRequest,
+  getStoredBiometricToken,
+  getStoredBiometricUser,
   getStoredToken,
   getStoredUser,
+  isBiometricLoginEnabled,
   login as loginRequest,
   logout as logoutRequest,
   signup as signupRequest,
@@ -11,35 +17,47 @@ import {
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  /** True if a token + user are already in Secure Store from a previous session. */
-  hasStoredSession: boolean;
+  /**
+   * True if the user has opted in to biometric login AND a biometric-specific
+   * token/user is actually in Secure Store. This is deliberately independent
+   * of whether there's an active session — it's read from keys `logout()`
+   * never touches, so it stays true across sign-out/sign-in.
+   */
+  canUseBiometricLogin: boolean;
   login: (email: string, password: string) => Promise<User>;
   signup: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
   /**
-   * Restores the session from the token/user already in Secure Store, without
-   * hitting the network. Used after a successful biometric check — the JWT was
-   * issued by a previous email/password login, biometrics just unlocks it again.
-   * Returns null (and leaves the user logged out) if nothing valid is stored.
+   * Restores the session from the biometric-specific token/user in Secure
+   * Store, without hitting the network. Used after a successful Face
+   * ID/Touch ID check. Returns null (and leaves the user logged out) if
+   * nothing valid is stored.
    */
   restoreSession: () => Promise<User | null>;
+  /** Opts in to biometric login using the current active session's token/user. */
+  enableBiometricLogin: () => Promise<void>;
+  /** Explicit opt-out — the only thing that should ever hide the biometric button for good. */
+  disableBiometricLogin: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+async function checkCanUseBiometricLogin(): Promise<boolean> {
+  const [enabled, biometricToken] = await Promise.all([isBiometricLoginEnabled(), getStoredBiometricToken()]);
+  return enabled && Boolean(biometricToken);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasStoredSession, setHasStoredSession] = useState(false);
+  const [canUseBiometricLogin, setCanUseBiometricLogin] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [token, storedUser] = await Promise.all([getStoredToken(), getStoredUser()]);
-      // Intentionally does NOT auto-restore `user` here. A stored token only
-      // means the login screen can offer biometric login as a shortcut — the
-      // session itself is restored explicitly via restoreSession(), either
-      // after a successful Face ID/Touch ID check or a fresh password login.
-      setHasStoredSession(Boolean(token && storedUser));
+      // Intentionally does NOT auto-restore `user` here — the session itself
+      // is only ever restored explicitly, via a fresh password login or a
+      // successful Face ID/Touch ID check (restoreSession()).
+      setCanUseBiometricLogin(await checkCanUseBiometricLogin());
       setIsLoading(false);
     })();
   }, []);
@@ -47,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const loggedInUser = await loginRequest(email, password);
     setUser(loggedInUser);
+    setCanUseBiometricLogin(await checkCanUseBiometricLogin());
     return loggedInUser;
   }, []);
 
@@ -57,22 +76,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // Only clears the active session — never touches the biometric keys, so
+    // canUseBiometricLogin (and the button it drives) is unaffected.
     await logoutRequest();
     setUser(null);
-    setHasStoredSession(false);
   }, []);
 
   const restoreSession = useCallback(async () => {
-    const [token, storedUser] = await Promise.all([getStoredToken(), getStoredUser()]);
+    const [token, storedUser] = await Promise.all([getStoredBiometricToken(), getStoredBiometricUser()]);
     if (token && storedUser) {
+      await activateSession(token, storedUser);
       setUser(storedUser);
       return storedUser;
     }
     return null;
   }, []);
 
+  const enableBiometricLogin = useCallback(async () => {
+    const [token, activeUser] = await Promise.all([getStoredToken(), getStoredUser()]);
+    if (!token || !activeUser) {
+      throw new Error('You need to be logged in to enable biometric login.');
+    }
+    await enableBiometricLoginRequest(token, activeUser);
+    setCanUseBiometricLogin(true);
+  }, []);
+
+  const disableBiometricLogin = useCallback(async () => {
+    await disableBiometricLoginRequest();
+    setCanUseBiometricLogin(false);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, hasStoredSession, login, signup, logout, restoreSession }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        canUseBiometricLogin,
+        login,
+        signup,
+        logout,
+        restoreSession,
+        enableBiometricLogin,
+        disableBiometricLogin,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
