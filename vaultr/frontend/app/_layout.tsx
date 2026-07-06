@@ -18,6 +18,8 @@ function RootNavigator() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="chat" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="account/[id]" />
+      <Stack.Screen name="transfer" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

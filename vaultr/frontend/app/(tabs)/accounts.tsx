@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
 import { colors, spacing, typography } from '../../constants/theme';
 import AccountCard from '../../components/AccountCard';
 import api from '../../services/api';
@@ -12,18 +13,24 @@ export default function AccountsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await api.get<Account[]>('/accounts');
-        setAccounts(data);
-      } catch (err) {
-        setError(friendlyError(err, "We couldn't load your accounts right now."));
-      } finally {
-        setIsLoading(false);
-      }
-    })();
+  const load = useCallback(async () => {
+    try {
+      const { data } = await api.get<Account[]>('/accounts');
+      setAccounts(data);
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't load your accounts right now."));
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Refetch on focus so balances are current after returning from a
+  // successful transfer/deposit, not just on first mount.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
@@ -38,7 +45,9 @@ export default function AccountsScreen() {
         <FlatList
           data={accounts}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <AccountCard account={item} />}
+          renderItem={({ item }) => (
+            <AccountCard account={item} onPress={(acc) => router.push(`/account/${acc.id}`)} />
+          )}
           ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
           ListHeaderComponent={
             accounts.length > 0 ? (

@@ -49,6 +49,18 @@ export interface Transaction {
   updatedAt?: string;
 }
 
+export interface CreateTransactionResponse {
+  transaction: Transaction;
+  account: Account;
+}
+
+export interface CreateTransferResponse {
+  debitTransaction: Transaction;
+  creditTransaction: Transaction;
+  fromAccount: Account;
+  toAccount: Account;
+}
+
 export interface Goal {
   id: string;
   userId: string;

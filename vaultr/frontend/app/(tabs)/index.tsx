@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useTransactions } from '../../hooks/useTransactions';
@@ -42,34 +42,38 @@ function isWithinHours(iso: string, hours: number): boolean {
   return diffMs >= 0 && diffMs <= hours * 60 * 60 * 1000;
 }
 
-function showComingSoon(action: string) {
-  Alert.alert('Coming soon', `${action} isn't available yet, but it's on the way.`);
-}
-
 export default function HomeScreen() {
   const { user } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { transactions, isLoading: isLoadingTransactions } = useTransactions();
+  const { transactions, isLoading: isLoadingTransactions, refetch: refetchTransactions } = useTransactions();
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [accountsRes, goalsRes] = await Promise.all([
-          api.get<Account[]>('/accounts'),
-          api.get<Goal[]>('/goals'),
-        ]);
-        setAccounts(accountsRes.data);
-        setGoals(goalsRes.data);
-      } catch (err) {
-        setError(friendlyError(err, "We couldn't load your dashboard right now."));
-      } finally {
-        setIsLoadingAccounts(false);
-      }
-    })();
+  const load = useCallback(async () => {
+    try {
+      const [accountsRes, goalsRes] = await Promise.all([
+        api.get<Account[]>('/accounts'),
+        api.get<Goal[]>('/goals'),
+      ]);
+      setAccounts(accountsRes.data);
+      setGoals(goalsRes.data);
+    } catch (err) {
+      setError(friendlyError(err, "We couldn't load your dashboard right now."));
+    } finally {
+      setIsLoadingAccounts(false);
+    }
   }, []);
+
+  // Refetch every time Home regains focus — e.g. returning from a
+  // successful transfer or deposit — so balances update instantly rather
+  // than only on first mount.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+      refetchTransactions();
+    }, [load, refetchTransactions])
+  );
 
   const totalBalance = useMemo(() => accounts.reduce((sum, a) => sum + a.balance, 0), [accounts]);
   const goalsValue = useMemo(() => goals.reduce((sum, g) => sum + g.currentAmount, 0), [goals]);
@@ -118,9 +122,21 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.quickActions}>
-              <QuickActionButton label="Send" icon="arrow-up-circle-outline" onPress={() => showComingSoon('Sending money')} />
-              <QuickActionButton label="Add" icon="add-circle-outline" onPress={() => showComingSoon('Adding funds')} />
-              <QuickActionButton label="Move" icon="swap-horizontal-outline" onPress={() => showComingSoon('Moving money')} />
+              <QuickActionButton
+                label="Send"
+                icon="arrow-up-circle-outline"
+                onPress={() => router.push({ pathname: '/transfer', params: { mode: 'transfer' } })}
+              />
+              <QuickActionButton
+                label="Add"
+                icon="add-circle-outline"
+                onPress={() => router.push({ pathname: '/transfer', params: { mode: 'deposit' } })}
+              />
+              <QuickActionButton
+                label="Move"
+                icon="swap-horizontal-outline"
+                onPress={() => router.push({ pathname: '/transfer', params: { mode: 'transfer' } })}
+              />
             </View>
 
             <View style={styles.section}>
@@ -137,6 +153,7 @@ export default function HomeScreen() {
                     <AccountCard
                       key={account.id}
                       account={account}
+                      onPress={(acc) => router.push(`/account/${acc.id}`)}
                       hasRecentActivity={transactions.some(
                         (t) => t.accountId === account.id && isWithinHours(t.createdAt, RECENT_ACTIVITY_WINDOW_HOURS)
                       )}

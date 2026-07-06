@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../constants/theme';
 import type { Account, AccountType } from '../types';
@@ -36,9 +36,9 @@ function lastFourFromId(id: string): string {
   return source.slice(-4).toUpperCase();
 }
 
-export default function AccountCard({ account, hasRecentActivity = false }: AccountCardProps) {
-  return (
-    <View style={styles.card}>
+export default function AccountCard({ account, onPress, hasRecentActivity = false }: AccountCardProps) {
+  const content = (
+    <>
       <View style={styles.header}>
         <View style={styles.iconWrapper}>
           <AccountIcon type={account.type} />
@@ -48,10 +48,26 @@ export default function AccountCard({ account, hasRecentActivity = false }: Acco
           <Text style={styles.name}>{account.name}</Text>
         </View>
         {hasRecentActivity ? <View style={styles.activityDot} /> : null}
+        {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
       </View>
       <Text style={styles.balance}>${account.balance.toFixed(2)}</Text>
       <Text style={styles.accountNumber}>•••• {lastFourFromId(account.id)}</Text>
-    </View>
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={styles.card}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      onPress={() => onPress(account)}
+      accessibilityRole="button"
+      accessibilityLabel={`${LABELS_BY_TYPE[account.type]} account, balance $${account.balance.toFixed(2)}`}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    >
+      {content}
+    </Pressable>
   );
 }
 
@@ -62,6 +78,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.card,
     padding: spacing.lg,
+  },
+  cardPressed: {
+    borderColor: colors.accentGold,
+    backgroundColor: colors.accentGoldFaint,
   },
   header: {
     flexDirection: 'row',
