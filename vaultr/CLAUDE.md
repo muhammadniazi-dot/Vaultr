@@ -91,6 +91,7 @@ to the authenticated user.
 - `GET /accounts/:id`
 - `GET /transactions?accountId=&limit=&offset=&type=&status=` — sorted newest first. `type` accepts `credit`/`debit` or the friendlier `deposit`/`withdrawal`/`transfer`/`payment`; `status` accepts `pending`/`completed`/`failed`
 - `POST /transactions` — body: `{ accountId, type, amount, title|merchantName, description?, category?, recipient? }`. Validates a positive amount and account ownership, atomically updates the account balance (credit adds, debit subtracts), rejects if the result would go negative, and returns `{ transaction, account }`
+- `POST /transfers` — body: `{ fromAccountId, toAccountId, amount, note? }`. Transfers between two of the caller's own accounts. Validates both accounts belong to the user, rejects same-account transfers and insufficient funds, and atomically creates a DEBIT transaction on the source + a CREDIT transaction on the destination + updates both balances in one `prisma.$transaction`. Returns `{ debitTransaction, creditTransaction, fromAccount, toAccount }`
 - `GET /goals`
 - `POST /goals` — body: `{ name, targetAmount, currentAmount?, linkedAccountId?, deadline? }`
 - `PATCH /goals/:id`

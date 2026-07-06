@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth';
 import accountsRoutes from './routes/accounts';
 import transactionsRoutes from './routes/transactions';
+import transfersRoutes from './routes/transfers';
 import goalsRoutes from './routes/goals';
 import assistantRoutes from './routes/assistant';
 
@@ -24,6 +25,7 @@ app.get('/health', (_req, res) => {
 app.use('/auth', authRoutes);
 app.use('/accounts', accountsRoutes);
 app.use('/transactions', transactionsRoutes);
+app.use('/transfers', transfersRoutes);
 app.use('/goals', goalsRoutes);
 app.use('/assistant', assistantRoutes);
 
