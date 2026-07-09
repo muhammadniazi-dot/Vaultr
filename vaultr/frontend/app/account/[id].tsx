@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -6,8 +6,10 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import TransactionRow from '../../components/TransactionRow';
+import BalanceHistoryChart from '../../components/BalanceHistoryChart';
 import api from '../../services/api';
 import { friendlyError } from '../../services/errors';
+import { generateBalanceHistory, seedFromString } from '../../constants/mockBalanceHistory';
 import type { Account, AccountType, Transaction } from '../../types';
 
 const LABELS_BY_TYPE: Record<AccountType, string> = {
@@ -70,6 +72,13 @@ export default function AccountDetailScreen() {
     }, [load])
   );
 
+  // Per-account balance history for the trend chart. Seeded off the account id
+  // so each account has its own stable shape, ending at its live balance.
+  const balanceHistory = useMemo(
+    () => (account ? generateBalanceHistory(account.balance, 6, seedFromString(account.id)) : []),
+    [account]
+  );
+
   if (isAuthLoading) {
     return <View style={{ flex: 1, backgroundColor: colors.background }} />;
   }
@@ -119,6 +128,11 @@ export default function AccountDetailScreen() {
                   <Text style={styles.transferButtonText}>Send from this account</Text>
                 </Pressable>
               </View>
+
+              <View style={styles.chartSection}>
+                <BalanceHistoryChart data={balanceHistory} title="Balance trend" />
+              </View>
+
               <Text style={styles.sectionTitle}>Transactions</Text>
             </>
           }
@@ -227,6 +241,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
+  },
+  chartSection: {
+    marginTop: spacing.lg,
   },
   sectionTitle: {
     color: colors.textPrimary,

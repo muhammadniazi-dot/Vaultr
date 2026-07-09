@@ -17,6 +17,8 @@ import SectionHeader from '../../components/SectionHeader';
 import InsightsCard from '../../components/InsightsCard';
 import BillsCard from '../../components/BillsCard';
 import SecurityCard from '../../components/SecurityCard';
+import BalanceHistoryChart from '../../components/BalanceHistoryChart';
+import { generateBalanceHistory } from '../../constants/mockBalanceHistory';
 import type { Account, Goal } from '../../types';
 
 const RECENT_TRANSACTION_COUNT = 5;
@@ -79,6 +81,13 @@ export default function HomeScreen() {
   const goalsValue = useMemo(() => goals.reduce((sum, g) => sum + g.currentAmount, 0), [goals]);
   const netWorth = totalBalance + goalsValue;
 
+  // Overall balance history for the trend chart. Ends at the live total balance;
+  // a fixed seed keeps the month-to-month shape stable across refreshes.
+  const balanceHistory = useMemo(
+    () => (accounts.length > 0 ? generateBalanceHistory(totalBalance, 6, 424242) : []),
+    [accounts.length, totalBalance]
+  );
+
   const todayActivity = useMemo(() => {
     const today = transactions.filter((t) => isWithinHours(t.createdAt, 24));
     const spent = today.filter((t) => t.type === 'DEBIT').reduce((sum, t) => sum + Math.abs(t.amount), 0);
@@ -137,6 +146,10 @@ export default function HomeScreen() {
                 icon="swap-horizontal-outline"
                 onPress={() => router.push({ pathname: '/transfer', params: { mode: 'transfer' } })}
               />
+            </View>
+
+            <View style={styles.section}>
+              <BalanceHistoryChart data={balanceHistory} title="Total balance trend" />
             </View>
 
             <View style={styles.section}>
