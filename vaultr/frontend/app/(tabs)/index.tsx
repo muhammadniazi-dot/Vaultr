@@ -18,6 +18,7 @@ import InsightsCard from '../../components/InsightsCard';
 import BillsCard from '../../components/BillsCard';
 import SecurityCard from '../../components/SecurityCard';
 import BalanceHistoryChart from '../../components/BalanceHistoryChart';
+import VerifyEmailBanner from '../../components/VerifyEmailBanner';
 import { generateBalanceHistory } from '../../constants/mockBalanceHistory';
 import type { Account, Goal } from '../../types';
 
@@ -112,6 +113,8 @@ export default function HomeScreen() {
           </View>
           <BrandMark size={40} />
         </View>
+
+        <VerifyEmailBanner />
 
         {isLoading ? (
           <ActivityIndicator color={colors.accentGold} style={styles.loadingSpinner} />

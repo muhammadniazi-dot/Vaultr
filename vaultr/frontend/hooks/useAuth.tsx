@@ -12,6 +12,7 @@ import {
   login as loginRequest,
   logout as logoutRequest,
   signup as signupRequest,
+  updateStoredUser,
 } from '../services/auth';
 
 interface AuthContextValue {
@@ -38,6 +39,8 @@ interface AuthContextValue {
   enableBiometricLogin: () => Promise<void>;
   /** Explicit opt-out — the only thing that should ever hide the biometric button for good. */
   disableBiometricLogin: () => Promise<void>;
+  /** Replaces the in-memory + stored user (e.g. after email verification flips `emailVerified`). */
+  refreshUser: (user: User) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -106,6 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCanUseBiometricLogin(false);
   }, []);
 
+  const refreshUser = useCallback(async (updated: User) => {
+    setUser(updated);
+    await updateStoredUser(updated);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -118,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         restoreSession,
         enableBiometricLogin,
         disableBiometricLogin,
+        refreshUser,
       }}
     >
       {children}

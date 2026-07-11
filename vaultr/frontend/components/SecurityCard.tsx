@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../constants/theme';
+import { useAuth } from '../hooks/useAuth';
 import { getBiometricKind, getStoredToken, type BiometricKind } from '../services/auth';
 import { decodeJwtPayload } from '../services/jwt';
 
@@ -45,6 +46,7 @@ function StatusRow({ icon, label, isPositive }: StatusRowProps) {
 }
 
 export default function SecurityCard() {
+  const { user } = useAuth();
   const [biometricKind, setBiometricKind] = useState<BiometricKind>('none');
   const [lastLogin, setLastLogin] = useState<string>('Unknown');
 
@@ -61,6 +63,11 @@ export default function SecurityCard() {
 
   return (
     <View style={styles.card}>
+      <StatusRow
+        icon={user?.emailVerified ? 'shield-checkmark-outline' : 'mail-unread-outline'}
+        label={user?.emailVerified ? 'Email verified' : 'Email not verified'}
+        isPositive={Boolean(user?.emailVerified)}
+      />
       <StatusRow
         icon={biometricKind === 'none' ? 'finger-print-outline' : 'shield-checkmark-outline'}
         label={labelForBiometricKind(biometricKind)}

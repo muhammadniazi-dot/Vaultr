@@ -74,7 +74,8 @@ vaultr/
   `/assistant` routes, which proxy to Anthropic
 
 ## Database schema (Prisma)
-- **User**: `id, email, passwordHash, name, avatarUrl, createdAt` — has many Accounts, Transactions, Goals
+- **User**: `id, email, passwordHash, name, avatarUrl, emailVerified (default false), createdAt` — has many Accounts, Transactions, Goals, EmailVerifications
+- **EmailVerification**: `id, userId, codeHash (bcrypt of the 6-digit code), expiresAt, consumedAt, createdAt` — single-use, expiring verification codes; plaintext codes are never stored
 - **Account**: `id, userId, type (SAVINGS | CHEQUING | TFSA), balance, name, accountNumberLast4, currency (default CAD), institutionName (default "Vaultr"), createdAt, updatedAt` — belongs to User
 - **Transaction**: `id, accountId, userId, amount, type (CREDIT | DEBIT), status (PENDING | COMPLETED | FAILED, default COMPLETED), category, merchantName, description, recipient, currency (default CAD), createdAt, updatedAt` — belongs to Account and User
 - **Goal**: `id, userId, name, targetAmount, currentAmount, linkedAccountId, deadline, createdAt` — belongs to User, optionally linked to an Account
@@ -84,8 +85,12 @@ All routes except `/health`, `/auth/signup`, `/auth/login` require a `Bearer` JW
 to the authenticated user.
 
 - `GET /health`
-- `POST /auth/signup` — body: `{ email, password, name }`
+- `POST /auth/signup` — body: `{ email, password, name }`. Creates the user (unverified) and sends a verification code email
 - `POST /auth/login` — body: `{ email, password }`
+- `POST /auth/change-password` — body: `{ currentPassword, newPassword }`. Auth required. Verifies the current password, rejects reuse, min 8 chars. Returns `{ ok: true }`
+- `POST /auth/send-verification-email` — auth required, sends a fresh 6-digit code to the user's email
+- `POST /auth/verify-email` — body: `{ code }`, auth required. Marks `emailVerified` on success, returns `{ user }`
+- `POST /auth/resend-verification-email` — auth required, rate-limited resend of the code
 - `GET /accounts` — returns the user's accounts, shaped with `balance`, `availableBalance`, `accountNumberLast4`, `currency`, `institutionName`
 - `POST /accounts` — body: `{ type, name, balance? }`
 - `GET /accounts/:id`

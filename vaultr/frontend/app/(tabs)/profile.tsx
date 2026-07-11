@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { getBiometricKind, type BiometricKind } from '../../services/auth';
@@ -69,6 +71,16 @@ export default function ProfileScreen() {
         </View>
       ) : null}
 
+      <View style={styles.card}>
+        <Pressable style={styles.linkRow} onPress={() => router.push('/change-password')} hitSlop={8}>
+          <View style={styles.linkText}>
+            <Text style={styles.linkLabel}>Change password</Text>
+            <Text style={styles.linkSub}>Update your account password</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </Pressable>
+      </View>
+
       <Pressable style={styles.button} onPress={handleLogout}>
         <Text style={styles.buttonText}>Log out</Text>
       </Pressable>
@@ -128,6 +140,24 @@ const styles = StyleSheet.create({
     color: colors.accentGold,
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  linkText: {
+    flex: 1,
+  },
+  linkLabel: {
+    color: colors.textPrimary,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+  },
+  linkSub: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.xs,
   },
   button: {
     backgroundColor: colors.surface,

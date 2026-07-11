@@ -34,6 +34,22 @@ export async function signup(email: string, password: string, name: string): Pro
   return data.user;
 }
 
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await api.post('/auth/change-password', { currentPassword, newPassword });
+}
+
+/**
+ * Overwrites the stored active-session user (and the biometric copy, if the
+ * user opted in) with a fresh copy — e.g. after email verification flips
+ * `emailVerified`. Leaves tokens untouched.
+ */
+export async function updateStoredUser(user: User): Promise<void> {
+  await secureStorage.setItemAsync(USER_KEY, JSON.stringify(user));
+  if (await isBiometricLoginEnabled()) {
+    await secureStorage.setItemAsync(BIOMETRIC_USER_KEY, JSON.stringify(user));
+  }
+}
+
 /**
  * Ends the current session only. Deliberately does not touch the biometric
  * keys — signing out must not remove the saved Face ID/Touch ID login unless

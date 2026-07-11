@@ -7,10 +7,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { friendlyError } from '../../services/errors';
 import { getBiometricKind, type BiometricKind } from '../../services/auth';
 import { validateEmail, validateName, validatePassword } from '../../services/validation';
+import { evaluatePasswordStrength, isPasswordBreached } from '../../services/passwordSecurity';
 import AuthTextField from '../../components/AuthTextField';
 import AuthButton from '../../components/AuthButton';
 import AuthBackdrop from '../../components/AuthBackdrop';
 import BrandMark from '../../components/BrandMark';
+import PasswordStrengthMeter from '../../components/PasswordStrengthMeter';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -59,10 +61,37 @@ export default function SignupScreen() {
     setFieldErrors(errors);
     if (errors.name || errors.email || errors.password) return;
 
+    // Block weak passwords before we even hit the network.
+    const strength = evaluatePasswordStrength(password, [name, email]);
+    if (!strength.isAcceptable) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        password: strength.warning ?? 'Please choose a stronger password.',
+      }));
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      // Breach check via HaveIBeenPwned. Fail open on a network error — a flaky
+      // connection shouldn't stop someone from creating an account.
+      try {
+        if (await isPasswordBreached(password)) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            password: 'This password has appeared in a data breach. Please choose another one.',
+          }));
+          return;
+        }
+      } catch {
+        // Breach service unreachable — proceed without the breach gate.
+      }
+
       await signup(email.trim(), password, name.trim());
       await promptToEnableBiometricLogin();
+      // New accounts start unverified — send them to enter the emailed code.
+      // Signup already triggered the first send, hence sent=1.
+      router.replace({ pathname: '/verify-email', params: { sent: '1' } });
     } catch (err) {
       setAuthError(friendlyError(err, 'Could not create your account. Please try again.'));
     } finally {
@@ -70,24 +99,33 @@ export default function SignupScreen() {
     }
   };
 
-  const promptToEnableBiometricLogin = async () => {
+  // Resolves once the user has made a choice (or immediately if the device has
+  // no biometrics), so the caller can then navigate on to email verification.
+  const promptToEnableBiometricLogin = async (): Promise<void> => {
     const kind = await getBiometricKind();
     if (kind === 'none') return;
 
     const { title, label } = PROMPT_COPY_BY_KIND[kind];
-    Alert.alert(title, `Use ${label} to log in faster next time. You can turn this off anytime in your profile.`, [
-      { text: 'Not now', style: 'cancel' },
-      {
-        text: 'Enable',
-        onPress: () => {
-          enableBiometricLogin().catch(() => {
-            // Best-effort — the account was already created successfully, so
-            // failing to opt in to biometrics shouldn't block or alarm the
-            // user. They can still enable it later from Profile.
-          });
-        },
-      },
-    ]);
+    await new Promise<void>((resolve) => {
+      Alert.alert(
+        title,
+        `Use ${label} to log in faster next time. You can turn this off anytime in your profile.`,
+        [
+          { text: 'Not now', style: 'cancel', onPress: () => resolve() },
+          {
+            text: 'Enable',
+            onPress: () => {
+              // Best-effort — the account already exists, so a failed opt-in
+              // shouldn't block the user. They can enable it later in Profile.
+              enableBiometricLogin()
+                .catch(() => {})
+                .finally(() => resolve());
+            },
+          },
+        ],
+        { onDismiss: () => resolve() }
+      );
+    });
   };
 
   return (
@@ -152,6 +190,8 @@ export default function SignupScreen() {
               onSubmitEditing={handleSignup}
               returnKeyType="go"
             />
+
+            <PasswordStrengthMeter password={password} userInputs={[name, email]} />
 
             {authError ? (
               <View style={styles.authErrorBanner} accessibilityRole="alert">
