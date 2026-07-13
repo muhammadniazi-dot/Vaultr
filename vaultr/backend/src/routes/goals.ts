@@ -13,18 +13,48 @@ router.get('/', async (req: AuthenticatedRequest, res) => {
 });
 
 router.post('/', async (req: AuthenticatedRequest, res) => {
-  const { name, targetAmount, currentAmount, linkedAccountId, deadline } = req.body;
-  if (!name || targetAmount == null) {
-    return res.status(400).json({ error: 'name and targetAmount are required' });
+  const { name, targetAmount, currentAmount, linkedAccountId, monthlyContribution, deadline } = req.body;
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return res.status(400).json({ error: 'name is required' });
+  }
+  const numericTarget = Number(targetAmount);
+  if (!Number.isFinite(numericTarget) || numericTarget <= 0) {
+    return res.status(400).json({ error: 'targetAmount must be a positive number' });
+  }
+  if (!linkedAccountId) {
+    return res.status(400).json({ error: 'linkedAccountId is required' });
+  }
+
+  const numericCurrent = currentAmount == null ? 0 : Number(currentAmount);
+  if (!Number.isFinite(numericCurrent) || numericCurrent < 0) {
+    return res.status(400).json({ error: 'currentAmount must be a non-negative number' });
+  }
+  if (numericCurrent > numericTarget) {
+    return res.status(400).json({ error: 'currentAmount cannot exceed targetAmount' });
+  }
+
+  let numericContribution: number | null = null;
+  if (monthlyContribution != null) {
+    numericContribution = Number(monthlyContribution);
+    if (!Number.isFinite(numericContribution) || numericContribution < 0) {
+      return res.status(400).json({ error: 'monthlyContribution must be a non-negative number' });
+    }
+  }
+
+  const account = await prisma.account.findFirst({ where: { id: linkedAccountId, userId: req.userId } });
+  if (!account) {
+    return res.status(404).json({ error: 'Linked account not found' });
   }
 
   const goal = await prisma.goal.create({
     data: {
       userId: req.userId!,
-      name,
-      targetAmount,
-      currentAmount: currentAmount ?? 0,
+      name: name.trim(),
+      targetAmount: numericTarget,
+      currentAmount: numericCurrent,
       linkedAccountId,
+      monthlyContribution: numericContribution,
       deadline: deadline ? new Date(deadline) : undefined,
     },
   });

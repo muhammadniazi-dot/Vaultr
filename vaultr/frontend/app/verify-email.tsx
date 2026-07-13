@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -88,7 +88,16 @@ export default function VerifyEmailScreen() {
         </Pressable>
       </View>
 
-      <View style={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? spacing.xl : 0}
+      >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.iconWrapper}>
           <Ionicons name="mail-outline" size={32} color={colors.accentGold} />
         </View>
@@ -130,7 +139,8 @@ export default function VerifyEmailScreen() {
         <Pressable onPress={() => router.replace('/(tabs)')} hitSlop={8} style={styles.laterButton}>
           <Text style={styles.laterText}>I&apos;ll verify later</Text>
         </Pressable>
-      </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -146,9 +156,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingVertical: spacing.md,
   },
-  content: {
+  keyboardAvoider: {
     flex: 1,
+  },
+  content: {
+    flexGrow: 1,
     paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxxl,
   },
   iconWrapper: {
     width: 64,

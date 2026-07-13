@@ -78,7 +78,7 @@ vaultr/
 - **EmailVerification**: `id, userId, codeHash (bcrypt of the 6-digit code), expiresAt, consumedAt, createdAt` — single-use, expiring verification codes; plaintext codes are never stored
 - **Account**: `id, userId, type (SAVINGS | CHEQUING | TFSA), balance, name, accountNumberLast4, currency (default CAD), institutionName (default "Vaultr"), createdAt, updatedAt` — belongs to User
 - **Transaction**: `id, accountId, userId, amount, type (CREDIT | DEBIT), status (PENDING | COMPLETED | FAILED, default COMPLETED), category, merchantName, description, recipient, currency (default CAD), createdAt, updatedAt` — belongs to Account and User
-- **Goal**: `id, userId, name, targetAmount, currentAmount, linkedAccountId, deadline, createdAt` — belongs to User, optionally linked to an Account
+- **Goal**: `id, userId, name, targetAmount, currentAmount, linkedAccountId, monthlyContribution, deadline, createdAt` — belongs to User, optionally linked to an Account. `monthlyContribution` is optional and only used by the frontend to project a completion date; not enforced server-side.
 
 ## API routes
 All routes except `/health`, `/auth/signup`, `/auth/login` require a `Bearer` JWT and are scoped
@@ -98,7 +98,7 @@ to the authenticated user.
 - `POST /transactions` — body: `{ accountId, type, amount, title|merchantName, description?, category?, recipient? }`. Validates a positive amount and account ownership, atomically updates the account balance (credit adds, debit subtracts), rejects if the result would go negative, and returns `{ transaction, account }`
 - `POST /transfers` — body: `{ fromAccountId, toAccountId, amount, note? }`. Transfers between two of the caller's own accounts. Validates both accounts belong to the user, rejects same-account transfers and insufficient funds, and atomically creates a DEBIT transaction on the source + a CREDIT transaction on the destination + updates both balances in one `prisma.$transaction`. Returns `{ debitTransaction, creditTransaction, fromAccount, toAccount }`
 - `GET /goals`
-- `POST /goals` — body: `{ name, targetAmount, currentAmount?, linkedAccountId?, deadline? }`
+- `POST /goals` — body: `{ name, targetAmount, currentAmount?, linkedAccountId, monthlyContribution?, deadline? }`. Validates `targetAmount > 0`, `linkedAccountId` is required and must belong to the caller, and `currentAmount` (default 0) cannot exceed `targetAmount`
 - `PATCH /goals/:id`
 - `POST /assistant/chat` — body: `{ message }`, proxies to Claude
 - `GET /assistant/history`

@@ -100,14 +100,17 @@ model Transaction {
 }
 
 model Goal {
-  id              String    @id @default(uuid())
-  userId          String
-  name            String
-  targetAmount    Float
-  currentAmount   Float     @default(0)
-  linkedAccountId String?
-  deadline        DateTime?
-  createdAt       DateTime  @default(now())
+  id                  String    @id @default(uuid())
+  userId              String
+  name                String
+  targetAmount        Float
+  currentAmount       Float     @default(0)
+  linkedAccountId     String?
+  // Used to project a completion date on the frontend (remaining amount /
+  // monthlyContribution); optional since not every goal has a fixed contribution.
+  monthlyContribution Float?
+  deadline            DateTime?
+  createdAt           DateTime  @default(now())
 
   user          User     @relation(fields: [userId], references: [id])
   linkedAccount Account? @relation(fields: [linkedAccountId], references: [id])

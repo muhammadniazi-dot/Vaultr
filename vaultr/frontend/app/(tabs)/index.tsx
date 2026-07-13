@@ -222,7 +222,7 @@ export default function HomeScreen() {
               ) : (
                 <View style={styles.goalsList}>
                   {topGoals.map((goal) => (
-                    <GoalCard key={goal.id} goal={goal} />
+                    <GoalCard key={goal.id} goal={goal} accounts={accounts} />
                   ))}
                 </View>
               )}

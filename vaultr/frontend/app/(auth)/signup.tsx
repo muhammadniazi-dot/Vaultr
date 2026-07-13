@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { colors, radius, spacing, typography } from '../../constants/theme';
@@ -131,6 +131,11 @@ export default function SignupScreen() {
   return (
     <SafeAreaView style={styles.screen}>
       <AuthBackdrop />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? spacing.xl : 0}
+      >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -212,6 +217,7 @@ export default function SignupScreen() {
           </View>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -220,6 +226,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,

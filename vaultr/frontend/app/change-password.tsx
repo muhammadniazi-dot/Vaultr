@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -86,6 +86,11 @@ export default function ChangePasswordScreen() {
         <View style={{ width: 24 }} />
       </View>
 
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? spacing.xl : 0}
+      >
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <Text style={styles.subtitle}>
           Choose a strong password you don&apos;t use anywhere else.
@@ -140,6 +145,7 @@ export default function ChangePasswordScreen() {
           <AuthButton title="Update password" onPress={handleSubmit} loading={isSubmitting} />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -160,6 +166,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
+  },
+  keyboardAvoider: {
+    flex: 1,
   },
   scrollContent: {
     paddingTop: spacing.md,

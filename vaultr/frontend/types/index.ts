@@ -69,8 +69,17 @@ export interface Goal {
   targetAmount: number;
   currentAmount: number;
   linkedAccountId?: string | null;
+  monthlyContribution?: number | null;
   deadline?: string | null;
   createdAt: string;
+}
+
+export interface CreateGoalPayload {
+  name: string;
+  targetAmount: number;
+  linkedAccountId: string;
+  currentAmount?: number;
+  monthlyContribution?: number;
 }
 
 export interface AuthResponse {
