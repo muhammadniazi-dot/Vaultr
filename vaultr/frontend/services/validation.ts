@@ -19,3 +19,9 @@ export function validateName(value: string): string | undefined {
   if (!value.trim()) return 'Full name is required.';
   return undefined;
 }
+
+export function validatePasswordMatch(password: string, confirmPassword: string): string | undefined {
+  if (!confirmPassword) return 'Please confirm your password.';
+  if (confirmPassword !== password) return 'Passwords do not match.';
+  return undefined;
+}

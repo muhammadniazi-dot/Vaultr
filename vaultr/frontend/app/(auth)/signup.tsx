@@ -6,7 +6,7 @@ import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { friendlyError } from '../../services/errors';
 import { getBiometricKind, type BiometricKind } from '../../services/auth';
-import { validateEmail, validateName, validatePassword } from '../../services/validation';
+import { validateEmail, validateName, validatePassword, validatePasswordMatch } from '../../services/validation';
 import { evaluatePasswordStrength, isPasswordBreached } from '../../services/passwordSecurity';
 import AuthTextField from '../../components/AuthTextField';
 import AuthButton from '../../components/AuthButton';
@@ -20,6 +20,7 @@ interface FieldErrors {
   name?: string;
   email?: string;
   password?: string;
+  confirmPassword?: string;
 }
 
 const PROMPT_COPY_BY_KIND: Record<Exclude<BiometricKind, 'none'>, { title: string; label: string }> = {
@@ -33,6 +34,7 @@ export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -42,14 +44,20 @@ export default function SignupScreen() {
     name: validateName(name),
     email: validateEmail(email),
     password: validatePassword(password, MIN_PASSWORD_LENGTH),
+    confirmPassword: validatePasswordMatch(password, confirmPassword),
   });
 
-  const revalidateIfAttempted = (next: Partial<{ name: string; email: string; password: string }>) => {
+  const revalidateIfAttempted = (
+    next: Partial<{ name: string; email: string; password: string; confirmPassword: string }>
+  ) => {
     if (!hasAttemptedSubmit) return;
+    const nextPassword = next.password ?? password;
+    const nextConfirmPassword = next.confirmPassword ?? confirmPassword;
     setFieldErrors({
       name: validateName(next.name ?? name),
       email: validateEmail(next.email ?? email),
-      password: validatePassword(next.password ?? password, MIN_PASSWORD_LENGTH),
+      password: validatePassword(nextPassword, MIN_PASSWORD_LENGTH),
+      confirmPassword: validatePasswordMatch(nextPassword, nextConfirmPassword),
     });
   };
 
@@ -59,7 +67,7 @@ export default function SignupScreen() {
 
     const errors = validate();
     setFieldErrors(errors);
-    if (errors.name || errors.email || errors.password) return;
+    if (errors.name || errors.email || errors.password || errors.confirmPassword) return;
 
     // Block weak passwords before we even hit the network.
     const strength = evaluatePasswordStrength(password, [name, email]);
@@ -183,6 +191,7 @@ export default function SignupScreen() {
               label="Password"
               placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
               secureTextEntry
+              showToggle
               textContentType="newPassword"
               value={password}
               editable={!isSubmitting}
@@ -192,11 +201,28 @@ export default function SignupScreen() {
                 revalidateIfAttempted({ password: value });
               }}
               onBlur={() => revalidateIfAttempted({})}
-              onSubmitEditing={handleSignup}
-              returnKeyType="go"
+              returnKeyType="next"
             />
 
             <PasswordStrengthMeter password={password} userInputs={[name, email]} />
+
+            <AuthTextField
+              label="Confirm password"
+              placeholder="Re-enter your password"
+              secureTextEntry
+              showToggle
+              textContentType="newPassword"
+              value={confirmPassword}
+              editable={!isSubmitting}
+              error={fieldErrors.confirmPassword}
+              onChangeText={(value) => {
+                setConfirmPassword(value);
+                revalidateIfAttempted({ confirmPassword: value });
+              }}
+              onBlur={() => revalidateIfAttempted({})}
+              onSubmitEditing={handleSignup}
+              returnKeyType="go"
+            />
 
             {authError ? (
               <View style={styles.authErrorBanner} accessibilityRole="alert">
