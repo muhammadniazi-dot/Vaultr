@@ -23,6 +23,7 @@ function RootNavigator() {
       <Stack.Screen name="change-password" options={{ presentation: 'modal' }} />
       <Stack.Screen name="verify-email" options={{ presentation: 'modal' }} />
       <Stack.Screen name="create-goal" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="open-account" options={{ presentation: 'modal' }} />
     </Stack>
   );
 }

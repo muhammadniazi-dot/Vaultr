@@ -14,6 +14,7 @@ const LABELS_BY_TYPE: Record<AccountType, string> = {
   SAVINGS: 'Savings',
   CHEQUING: 'Chequing',
   TFSA: 'TFSA',
+  CREDIT_CARD: 'Credit Card',
 };
 
 function AccountIcon({ type }: { type: AccountType }) {
@@ -24,6 +25,8 @@ function AccountIcon({ type }: { type: AccountType }) {
       return <MaterialCommunityIcons name="piggy-bank-outline" size={size} color={color} />;
     case 'TFSA':
       return <Ionicons name="trending-up-outline" size={size} color={color} />;
+    case 'CREDIT_CARD':
+      return <MaterialCommunityIcons name="credit-card-outline" size={size} color={color} />;
     case 'CHEQUING':
     default:
       return <Ionicons name="card-outline" size={size} color={color} />;
@@ -37,6 +40,8 @@ function lastFourFromId(id: string): string {
 }
 
 export default function AccountCard({ account, onPress, hasRecentActivity = false }: AccountCardProps) {
+  const isCreditCard = account.type === 'CREDIT_CARD';
+
   const content = (
     <>
       <View style={styles.header}>
@@ -50,7 +55,11 @@ export default function AccountCard({ account, onPress, hasRecentActivity = fals
         {hasRecentActivity ? <View style={styles.activityDot} /> : null}
         {onPress ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
       </View>
+      {isCreditCard ? <Text style={styles.balanceLabel}>Current balance</Text> : null}
       <Text style={styles.balance}>${account.balance.toFixed(2)}</Text>
+      {isCreditCard && account.availableCredit != null ? (
+        <Text style={styles.availableCredit}>Available: ${account.availableCredit.toFixed(2)}</Text>
+      ) : null}
       <Text style={styles.accountNumber}>•••• {lastFourFromId(account.id)}</Text>
     </>
   );
@@ -118,11 +127,21 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: colors.accentGold,
   },
+  balanceLabel: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.xs,
+    marginTop: spacing.md,
+  },
   balance: {
     color: colors.textPrimary,
     fontSize: typography.sizes.xl,
     fontWeight: typography.weights.bold,
     marginTop: spacing.md,
+  },
+  availableCredit: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.xs,
+    marginTop: spacing.xs,
   },
   accountNumber: {
     color: colors.textMuted,

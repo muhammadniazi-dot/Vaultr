@@ -13,6 +13,7 @@ const SHORT_LABEL_BY_TYPE: Record<AccountType, string> = {
   CHEQUING: 'Chequing',
   SAVINGS: 'Savings',
   TFSA: 'TFSA',
+  CREDIT_CARD: 'Credit Card',
 };
 
 interface ChipProps {

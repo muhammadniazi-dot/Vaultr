@@ -76,7 +76,7 @@ vaultr/
 ## Database schema (Prisma)
 - **User**: `id, email, passwordHash, name, avatarUrl, emailVerified (default false), createdAt` — has many Accounts, Transactions, Goals, EmailVerifications
 - **EmailVerification**: `id, userId, codeHash (bcrypt of the 6-digit code), expiresAt, consumedAt, createdAt` — single-use, expiring verification codes; plaintext codes are never stored
-- **Account**: `id, userId, type (SAVINGS | CHEQUING | TFSA), balance, name, accountNumberLast4, currency (default CAD), institutionName (default "Vaultr"), createdAt, updatedAt` — belongs to User
+- **Account**: `id, userId, type (SAVINGS | CHEQUING | TFSA | CREDIT_CARD), balance, creditLimit, name, accountNumberLast4, currency (default CAD), institutionName (default "Vaultr"), createdAt, updatedAt` — belongs to User. `creditLimit` is only set for CREDIT_CARD accounts; for those, `balance` represents the amount currently owed rather than a saved amount
 - **Transaction**: `id, accountId, userId, amount, type (CREDIT | DEBIT), status (PENDING | COMPLETED | FAILED, default COMPLETED), category, merchantName, description, recipient, currency (default CAD), createdAt, updatedAt` — belongs to Account and User
 - **Goal**: `id, userId, name, targetAmount, currentAmount, linkedAccountId, monthlyContribution, deadline, createdAt` — belongs to User, optionally linked to an Account. `monthlyContribution` is optional and only used by the frontend to project a completion date; not enforced server-side.
 
@@ -92,7 +92,7 @@ to the authenticated user.
 - `POST /auth/verify-email` — body: `{ code }`, auth required. Marks `emailVerified` on success, returns `{ user }`
 - `POST /auth/resend-verification-email` — auth required, rate-limited resend of the code
 - `GET /accounts` — returns the user's accounts, shaped with `balance`, `availableBalance`, `accountNumberLast4`, `currency`, `institutionName`
-- `POST /accounts` — body: `{ type, name, balance? }`
+- `POST /accounts` — body: `{ type, name?, balance?, creditLimit? }`. Validates `type` is one of `CHEQUING`/`SAVINGS`/`TFSA`/`CREDIT_CARD`; `name` defaults to a sensible name per type if omitted; `creditLimit` defaults to $2000 for `CREDIT_CARD` (ignored otherwise); generates a globally-unique `accountNumberLast4`
 - `GET /accounts/:id`
 - `GET /transactions?accountId=&limit=&offset=&type=&status=` — sorted newest first. `type` accepts `credit`/`debit` or the friendlier `deposit`/`withdrawal`/`transfer`/`payment`; `status` accepts `pending`/`completed`/`failed`
 - `POST /transactions` — body: `{ accountId, type, amount, title|merchantName, description?, category?, recipient? }`. Validates a positive amount and account ownership, atomically updates the account balance (credit adds, debit subtracts), rejects if the result would go negative, and returns `{ transaction, account }`

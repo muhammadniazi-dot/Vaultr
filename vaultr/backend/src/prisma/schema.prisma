@@ -11,6 +11,7 @@ enum AccountType {
   SAVINGS
   CHEQUING
   TFSA
+  CREDIT_CARD
 }
 
 enum TransactionType {
@@ -59,7 +60,12 @@ model Account {
   id                 String      @id @default(uuid())
   userId             String
   type               AccountType
+  // For CREDIT_CARD accounts, balance is the amount currently owed (a
+  // liability) rather than a saved amount — availableCredit is derived from
+  // creditLimit - balance at the API layer, not stored separately.
   balance            Float       @default(0)
+  // Only set (and only meaningful) for CREDIT_CARD accounts.
+  creditLimit        Float?
   name               String
   // Cosmetic last-4 shown in the UI, generated at creation — not a real bank
   // account number (this is a demo app with no real account numbering).

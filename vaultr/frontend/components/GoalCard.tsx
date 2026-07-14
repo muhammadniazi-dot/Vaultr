@@ -17,6 +17,7 @@ const LABELS_BY_TYPE: Record<AccountType, string> = {
   SAVINGS: 'Savings',
   CHEQUING: 'Chequing',
   TFSA: 'TFSA',
+  CREDIT_CARD: 'Credit Card',
 };
 
 export default function GoalCard({ goal, accounts = [] }: GoalCardProps) {

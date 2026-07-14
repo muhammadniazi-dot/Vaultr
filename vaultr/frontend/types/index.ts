@@ -1,4 +1,4 @@
-export type AccountType = 'SAVINGS' | 'CHEQUING' | 'TFSA';
+export type AccountType = 'SAVINGS' | 'CHEQUING' | 'TFSA' | 'CREDIT_CARD';
 
 export type TransactionType = 'CREDIT' | 'DEBIT';
 export type TransactionDirection = 'inflow' | 'outflow';
@@ -24,9 +24,19 @@ export interface Account {
   // written against the older shape keeps compiling unchanged.
   accountNumberLast4?: string;
   availableBalance?: number;
+  // Only meaningful for CREDIT_CARD accounts.
+  creditLimit?: number;
+  availableCredit?: number;
   currency?: string;
   institutionName?: string;
   updatedAt?: string;
+}
+
+export interface CreateAccountPayload {
+  type: AccountType;
+  name?: string;
+  balance?: number;
+  creditLimit?: number;
 }
 
 export interface Transaction {

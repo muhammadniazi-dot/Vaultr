@@ -8,14 +8,20 @@ import type { Account, Transaction } from '@prisma/client';
  * this demo app yet, so the two are always equal today.
  */
 export function shapeAccount(account: Account) {
+  const isCreditCard = account.type === 'CREDIT_CARD';
   return {
     id: account.id,
     userId: account.userId,
     type: account.type,
     name: account.name,
     accountNumberLast4: account.accountNumberLast4,
+    // For credit cards, `balance` is the amount currently owed; availableBalance
+    // doesn't apply the same way, so it's left mirroring balance like other
+    // account types (no pending-hold concept in this demo app either way).
     balance: account.balance,
     availableBalance: account.balance,
+    creditLimit: account.creditLimit ?? undefined,
+    availableCredit: isCreditCard && account.creditLimit != null ? account.creditLimit - account.balance : undefined,
     currency: account.currency,
     institutionName: account.institutionName,
     createdAt: account.createdAt,

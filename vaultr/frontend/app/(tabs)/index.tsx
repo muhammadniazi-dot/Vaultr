@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useTransactions } from '../../hooks/useTransactions';
@@ -9,6 +10,7 @@ import api from '../../services/api';
 import { friendlyError } from '../../services/errors';
 import { mockBills } from '../../constants/mockBills';
 import BrandMark from '../../components/BrandMark';
+import AuthButton from '../../components/AuthButton';
 import AccountCard from '../../components/AccountCard';
 import GoalCard from '../../components/GoalCard';
 import TransactionRow from '../../components/TransactionRow';
@@ -120,6 +122,19 @@ export default function HomeScreen() {
           <ActivityIndicator color={colors.accentGold} style={styles.loadingSpinner} />
         ) : error ? (
           <Text style={styles.error}>{error}</Text>
+        ) : accounts.length === 0 ? (
+          <View style={styles.noAccountsWrapper}>
+            <View style={styles.noAccountsIconWrapper}>
+              <Ionicons name="wallet-outline" size={32} color={colors.accentGold} />
+            </View>
+            <Text style={styles.noAccountsTitle}>Welcome to Vaultr</Text>
+            <Text style={styles.noAccountsSubtitle}>
+              You don&apos;t have any accounts yet. Open your first Vaultr account to start banking.
+            </Text>
+            <View style={styles.noAccountsButton}>
+              <AuthButton title="Open an account" onPress={() => router.push('/open-account')} />
+            </View>
+          </View>
         ) : (
           <>
             <View style={styles.balanceSection}>
@@ -161,22 +176,20 @@ export default function HomeScreen() {
                 actionLabel="See all"
                 onActionPress={() => router.push('/(tabs)/accounts')}
               />
-              {accounts.length === 0 ? (
-                <Text style={styles.empty}>You don&apos;t have any accounts yet.</Text>
-              ) : (
-                <View style={styles.accountsList}>
-                  {accounts.map((account) => (
-                    <AccountCard
-                      key={account.id}
-                      account={account}
-                      onPress={(acc) => router.push(`/account/${acc.id}`)}
-                      hasRecentActivity={transactions.some(
-                        (t) => t.accountId === account.id && isWithinHours(t.createdAt, RECENT_ACTIVITY_WINDOW_HOURS)
-                      )}
-                    />
-                  ))}
-                </View>
-              )}
+              {/* accounts.length is always > 0 here — the zero-account case
+                  is handled by the full-dashboard empty state above. */}
+              <View style={styles.accountsList}>
+                {accounts.map((account) => (
+                  <AccountCard
+                    key={account.id}
+                    account={account}
+                    onPress={(acc) => router.push(`/account/${acc.id}`)}
+                    hasRecentActivity={transactions.some(
+                      (t) => t.accountId === account.id && isWithinHours(t.createdAt, RECENT_ACTIVITY_WINDOW_HOURS)
+                    )}
+                  />
+                ))}
+              </View>
             </View>
 
             <View style={styles.section}>
@@ -267,6 +280,36 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.sm,
     textAlign: 'center',
     marginTop: spacing.xxxl,
+  },
+  noAccountsWrapper: {
+    alignItems: 'center',
+    paddingTop: spacing.xxxl,
+    paddingHorizontal: spacing.lg,
+  },
+  noAccountsIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.card,
+    backgroundColor: colors.accentGoldFaint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  noAccountsTitle: {
+    color: colors.textPrimary,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+  },
+  noAccountsSubtitle: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.sm,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
+  },
+  noAccountsButton: {
+    width: '100%',
+    maxWidth: 280,
   },
   balanceSection: {
     marginTop: spacing.xxl,

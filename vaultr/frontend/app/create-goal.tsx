@@ -25,6 +25,7 @@ const LABELS_BY_TYPE: Record<AccountType, string> = {
   SAVINGS: 'Savings',
   CHEQUING: 'Chequing',
   TFSA: 'TFSA',
+  CREDIT_CARD: 'Credit Card',
 };
 
 function AccountIcon({ type }: { type: AccountType }) {
@@ -32,6 +33,8 @@ function AccountIcon({ type }: { type: AccountType }) {
   switch (type) {
     case 'SAVINGS':
       return <MaterialCommunityIcons name="piggy-bank-outline" size={20} color={color} />;
+    case 'CREDIT_CARD':
+      return <MaterialCommunityIcons name="credit-card-outline" size={20} color={color} />;
     case 'TFSA':
       return <Ionicons name="trending-up-outline" size={20} color={color} />;
     case 'CHEQUING':
