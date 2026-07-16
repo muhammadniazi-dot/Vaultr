@@ -29,21 +29,3 @@ export function normalizeTransactionType(input: string): NormalizedType | null {
       return null;
   }
 }
-
-/** A sensible default category when the client doesn't supply one. */
-export function defaultCategoryFor(input: string): string {
-  const key = input.trim().toUpperCase();
-  switch (key) {
-    case 'CREDIT':
-    case 'DEPOSIT':
-      return 'Income';
-    case 'TRANSFER':
-      return 'Transfer';
-    case 'PAYMENT':
-      return 'Payment';
-    case 'WITHDRAWAL':
-      return 'Withdrawal';
-    default:
-      return 'Other';
-  }
-}

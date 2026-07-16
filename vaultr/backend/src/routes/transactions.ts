@@ -3,7 +3,8 @@ import { Prisma, PrismaClient, TransactionStatus } from '@prisma/client';
 import { AuthenticatedRequest, verifyToken } from '../middleware/verifyToken';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { shapeAccount, shapeTransaction } from '../utils/shape';
-import { defaultCategoryFor, normalizeTransactionType } from '../utils/transactionType';
+import { normalizeTransactionType } from '../utils/transactionType';
+import { categorizeTransaction } from '../utils/categorize';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -100,7 +101,9 @@ router.post(
           userId: req.userId!,
           amount: numericAmount,
           type: normalized.dbType,
-          category: category ?? defaultCategoryFor(String(type)),
+          // Preserve an explicitly-supplied category; otherwise auto-tag from
+          // the merchant/title, falling back to a type-based hint then 'Other'.
+          category: category ?? categorizeTransaction(name, String(type)),
           merchantName: name,
           description: description ?? null,
           recipient: recipient ?? null,
