@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { friendlyError } from '../../services/errors';
@@ -11,7 +12,7 @@ import { evaluatePasswordStrength, isPasswordBreached } from '../../services/pas
 import AuthTextField from '../../components/AuthTextField';
 import AuthButton from '../../components/AuthButton';
 import AuthBackdrop from '../../components/AuthBackdrop';
-import BrandMark from '../../components/BrandMark';
+import AuthHeader from '../../components/AuthHeader';
 import PasswordStrengthMeter from '../../components/PasswordStrengthMeter';
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -140,109 +141,110 @@ export default function SignupScreen() {
     <SafeAreaView style={styles.screen}>
       <AuthBackdrop />
       <KeyboardAvoidingView
-        style={styles.keyboardAvoider}
+        style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? spacing.xl : 0}
       >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.card}>
-          <View style={styles.brandMarkWrapper}>
-            <BrandMark />
-          </View>
-          <Text style={styles.title}>Create your account</Text>
-          <Text style={styles.subtitle}>Start banking with Vaultr</Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.content}>
+            <AuthHeader title="Create your account" subtitle="Open an account to start banking with Vaultr." />
 
-          <View style={styles.form}>
-            <AuthTextField
-              label="Full name"
-              placeholder="Jane Doe"
-              autoComplete="name"
-              textContentType="name"
-              value={name}
-              editable={!isSubmitting}
-              error={fieldErrors.name}
-              onChangeText={(value) => {
-                setName(value);
-                revalidateIfAttempted({ name: value });
-              }}
-              onBlur={() => revalidateIfAttempted({})}
-            />
-            <AuthTextField
-              label="Email"
-              placeholder="you@example.com"
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              textContentType="emailAddress"
-              value={email}
-              editable={!isSubmitting}
-              error={fieldErrors.email}
-              onChangeText={(value) => {
-                setEmail(value);
-                revalidateIfAttempted({ email: value });
-              }}
-              onBlur={() => revalidateIfAttempted({})}
-            />
-            <AuthTextField
-              label="Password"
-              placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
-              secureTextEntry
-              showToggle
-              textContentType="newPassword"
-              value={password}
-              editable={!isSubmitting}
-              error={fieldErrors.password}
-              onChangeText={(value) => {
-                setPassword(value);
-                revalidateIfAttempted({ password: value });
-              }}
-              onBlur={() => revalidateIfAttempted({})}
-              returnKeyType="next"
-            />
+            <View style={styles.form}>
+              <AuthTextField
+                label="Full name"
+                placeholder="Jane Doe"
+                autoComplete="name"
+                textContentType="name"
+                value={name}
+                editable={!isSubmitting}
+                error={fieldErrors.name}
+                onChangeText={(value) => {
+                  setName(value);
+                  revalidateIfAttempted({ name: value });
+                }}
+                onBlur={() => revalidateIfAttempted({})}
+              />
+              <AuthTextField
+                label="Email address"
+                placeholder="you@example.com"
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                textContentType="emailAddress"
+                value={email}
+                editable={!isSubmitting}
+                error={fieldErrors.email}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  revalidateIfAttempted({ email: value });
+                }}
+                onBlur={() => revalidateIfAttempted({})}
+              />
+              <AuthTextField
+                label="Password"
+                placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+                secureTextEntry
+                showToggle
+                textContentType="newPassword"
+                value={password}
+                editable={!isSubmitting}
+                error={fieldErrors.password}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  revalidateIfAttempted({ password: value });
+                }}
+                onBlur={() => revalidateIfAttempted({})}
+                returnKeyType="next"
+              />
 
-            <PasswordStrengthMeter password={password} userInputs={[name, email]} />
+              <PasswordStrengthMeter password={password} userInputs={[name, email]} />
 
-            <AuthTextField
-              label="Confirm password"
-              placeholder="Re-enter your password"
-              secureTextEntry
-              showToggle
-              textContentType="newPassword"
-              value={confirmPassword}
-              editable={!isSubmitting}
-              error={fieldErrors.confirmPassword}
-              onChangeText={(value) => {
-                setConfirmPassword(value);
-                revalidateIfAttempted({ confirmPassword: value });
-              }}
-              onBlur={() => revalidateIfAttempted({})}
-              onSubmitEditing={handleSignup}
-              returnKeyType="go"
-            />
+              <AuthTextField
+                label="Confirm password"
+                placeholder="Re-enter your password"
+                secureTextEntry
+                showToggle
+                textContentType="newPassword"
+                value={confirmPassword}
+                editable={!isSubmitting}
+                error={fieldErrors.confirmPassword}
+                onChangeText={(value) => {
+                  setConfirmPassword(value);
+                  revalidateIfAttempted({ confirmPassword: value });
+                }}
+                onBlur={() => revalidateIfAttempted({})}
+                onSubmitEditing={handleSignup}
+                returnKeyType="go"
+              />
 
-            {authError ? (
-              <View style={styles.authErrorBanner} accessibilityRole="alert">
-                <Text style={styles.authErrorText}>{authError}</Text>
+              {authError ? (
+                <View style={styles.authErrorBanner} accessibilityRole="alert">
+                  <Text style={styles.authErrorText}>{authError}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.submitSpacing}>
+                <AuthButton
+                  title="Create account"
+                  onPress={handleSignup}
+                  loading={isSubmitting}
+                  icon={<Ionicons name="person-add-outline" size={18} color={colors.background} />}
+                />
               </View>
-            ) : null}
-
-            <View style={styles.submitSpacing}>
-              <AuthButton title="Sign up" onPress={handleSignup} loading={isSubmitting} />
             </View>
           </View>
+        </ScrollView>
 
-          <View style={styles.switchRow}>
-            <Text style={styles.switchText}>Already have an account? </Text>
-            <Pressable onPress={() => router.push('/(auth)/login')} disabled={isSubmitting} hitSlop={8}>
-              <Text style={styles.switchLink}>Log in</Text>
-            </Pressable>
-          </View>
+        <View style={styles.footer}>
+          <Text style={styles.switchText}>Already have an account? </Text>
+          <Pressable onPress={() => router.push('/(auth)/login')} disabled={isSubmitting} hitSlop={8}>
+            <Text style={styles.switchLink}>Sign in</Text>
+          </Pressable>
         </View>
-      </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -253,55 +255,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  keyboardAvoider: {
+  flex: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxxl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
   },
-  card: {
+  content: {
     width: '100%',
-    maxWidth: 400,
-    backgroundColor: colors.card,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radius.card,
-    paddingHorizontal: spacing.xxl,
-    paddingVertical: spacing.xxxl,
-    ...Platform.select({
-      web: { boxShadow: '0px 20px 60px rgba(0, 0, 0, 0.45)' },
-      default: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.35,
-        shadowRadius: 24,
-        elevation: 6,
-      },
-    }),
-  },
-  brandMarkWrapper: {
+    maxWidth: 420,
     alignSelf: 'center',
-    marginBottom: spacing.lg,
-  },
-  title: {
-    color: colors.textPrimary,
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.bold,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.sm,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.xxl,
   },
   form: {
     width: '100%',
+    marginTop: spacing.xl,
   },
   authErrorBanner: {
     backgroundColor: 'rgba(248, 113, 113, 0.1)',
@@ -318,11 +289,14 @@ const styles = StyleSheet.create({
   submitSpacing: {
     marginTop: spacing.sm,
   },
-  switchRow: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
     flexWrap: 'wrap',
-    marginTop: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   switchText: {
     color: colors.textMuted,
