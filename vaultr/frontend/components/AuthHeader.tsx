@@ -17,7 +17,7 @@ export default function AuthHeader({ title, subtitle }: AuthHeaderProps) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.halo}>
-        <BrandMark size={56} />
+        <BrandMark size={92} />
       </View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.subtitle}>{subtitle}</Text>
@@ -31,23 +31,25 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   halo: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.accentGoldFaint,
+    // Dark backing so the logo's own black circle sits seamlessly, framed by a
+    // hairline gold ring; a flat gold glow (no gradients) reads as a premium
+    // brand medallion.
+    backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.accentGoldSoft,
     marginBottom: spacing.xl,
-    // Flat gold glow (no gradients) to read as a premium brand orb.
     ...Platform.select({
-      web: { boxShadow: '0px 8px 40px rgba(201, 168, 76, 0.18)' },
+      web: { boxShadow: '0px 8px 40px rgba(201, 168, 76, 0.20)' },
       default: {
         shadowColor: colors.accentGold,
         shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 20,
+        shadowOpacity: 0.3,
+        shadowRadius: 22,
         elevation: 6,
       },
     }),

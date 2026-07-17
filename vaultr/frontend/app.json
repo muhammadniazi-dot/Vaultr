@@ -9,6 +9,8 @@
     "backgroundColor": "#0f0f0f",
     "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/brandmark.png",
+      "resizeMode": "contain",
       "backgroundColor": "#0f0f0f"
     },
     "assetBundlePatterns": [
@@ -22,7 +24,14 @@
       }
     },
     "android": {
-      "package": "com.vaultr.app"
+      "package": "com.vaultr.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brandmark.png",
+        "backgroundColor": "#0f0f0f"
+      }
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
