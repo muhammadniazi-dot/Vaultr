@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,10 +7,15 @@ import { colors, radius, spacing, typography } from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
 import { createAccount } from '../services/accounts';
 import { friendlyError } from '../services/errors';
+import api from '../services/api';
 import AuthButton from '../components/AuthButton';
 import type { Account, AccountType } from '../types';
 
 type Step = 'type' | 'confirm' | 'success';
+
+// Mirrors the backend's rule: at most one Chequing, Savings, or TFSA per
+// user, but Credit Cards have no cap.
+const SINGLE_INSTANCE_TYPES = new Set<AccountType>(['CHEQUING', 'SAVINGS', 'TFSA']);
 
 interface AccountTypeOption {
   type: AccountType;
@@ -62,11 +67,32 @@ export default function OpenAccountScreen() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createdAccount, setCreatedAccount] = useState<Account | null>(null);
 
+  const [existingTypes, setExistingTypes] = useState<Set<AccountType>>(new Set());
+  const [isLoadingExisting, setIsLoadingExisting] = useState(true);
+
+  // Used to grey out account types the user already holds (Chequing/Savings/
+  // TFSA are capped at one each) so the type-selection step reflects the rule
+  // up front instead of only erroring after the review step.
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.get<Account[]>('/accounts');
+        setExistingTypes(new Set(data.map((a) => a.type)));
+      } catch {
+        // Non-fatal — worst case, an already-owned type stays selectable and
+        // the backend's own check catches it on submit.
+      } finally {
+        setIsLoadingExisting(false);
+      }
+    })();
+  }, []);
+
   const selectedOption = ACCOUNT_TYPE_OPTIONS.find((o) => o.type === selectedType) ?? null;
 
   const close = () => router.back();
 
   const selectType = (type: AccountType) => {
+    if (SINGLE_INSTANCE_TYPES.has(type) && existingTypes.has(type)) return;
     setSelectedType(type);
     setSubmitError(null);
     setStep('confirm');
@@ -87,31 +113,51 @@ export default function OpenAccountScreen() {
     }
   };
 
-  const renderTypeStep = () => (
-    <>
-      <Text style={styles.title}>Choose an account type</Text>
-      <Text style={styles.subtitle}>Select the type of account you&apos;d like to open.</Text>
+  const renderTypeStep = () => {
+    if (isLoadingExisting) {
+      return <ActivityIndicator color={colors.accentGold} style={styles.center} />;
+    }
+    return (
+      <>
+        <Text style={styles.title}>Choose an account type</Text>
+        <Text style={styles.subtitle}>Select the type of account you&apos;d like to open.</Text>
 
-      <View style={styles.optionList}>
-        {ACCOUNT_TYPE_OPTIONS.map((option) => (
-          <Pressable
-            key={option.type}
-            onPress={() => selectType(option.type)}
-            accessibilityRole="button"
-            accessibilityLabel={`Open a ${option.title}`}
-            style={({ pressed }) => [styles.optionCard, pressed && styles.optionCardPressed]}
-          >
-            <View style={styles.optionIconWrapper}>{option.icon}</View>
-            <View style={styles.optionText}>
-              <Text style={styles.optionTitle}>{option.title}</Text>
-              <Text style={styles.optionDescription}>{option.description}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-        ))}
-      </View>
-    </>
-  );
+        <View style={styles.optionList}>
+          {ACCOUNT_TYPE_OPTIONS.map((option) => {
+            const isOwned = SINGLE_INSTANCE_TYPES.has(option.type) && existingTypes.has(option.type);
+            return (
+              <Pressable
+                key={option.type}
+                onPress={() => selectType(option.type)}
+                disabled={isOwned}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isOwned }}
+                accessibilityLabel={isOwned ? `${option.title}, already open` : `Open a ${option.title}`}
+                style={({ pressed }) => [
+                  styles.optionCard,
+                  pressed && !isOwned && styles.optionCardPressed,
+                  isOwned && styles.optionCardDisabled,
+                ]}
+              >
+                <View style={styles.optionIconWrapper}>{option.icon}</View>
+                <View style={styles.optionText}>
+                  <Text style={styles.optionTitle}>{option.title}</Text>
+                  <Text style={styles.optionDescription}>
+                    {isOwned ? 'You already have this account.' : option.description}
+                  </Text>
+                </View>
+                {isOwned ? (
+                  <Ionicons name="checkmark-circle" size={18} color={colors.textMuted} />
+                ) : (
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+      </>
+    );
+  };
 
   const renderConfirmStep = () => {
     if (!selectedOption) return null;
@@ -250,6 +296,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
     flexGrow: 1,
   },
+  center: {
+    marginTop: spacing.xxxl,
+  },
   title: {
     color: colors.textPrimary,
     fontSize: typography.sizes.xl,
@@ -277,6 +326,9 @@ const styles = StyleSheet.create({
   optionCardPressed: {
     borderColor: colors.accentGold,
     backgroundColor: colors.accentGoldFaint,
+  },
+  optionCardDisabled: {
+    opacity: 0.5,
   },
   optionIconWrapper: {
     width: 40,

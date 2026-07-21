@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { AuthenticatedRequest, verifyToken } from '../middleware/verifyToken';
 import { asyncHandler } from '../middleware/asyncHandler';
 import { shapeAccount } from '../utils/shape';
@@ -20,6 +20,18 @@ const DEFAULT_NAME_BY_TYPE: Record<AccountTypeValue, string> = {
 
 // New cards start with this limit unless a caller explicitly overrides it.
 const DEFAULT_CREDIT_LIMIT = 2000;
+
+// A user may hold at most one of each of these — unlike CREDIT_CARD, which
+// has no cap (matches typical retail banking: one chequing, one savings, one
+// TFSA per person, but multiple cards are normal).
+const SINGLE_INSTANCE_TYPES = new Set<AccountTypeValue>(['CHEQUING', 'SAVINGS', 'TFSA']);
+
+const LABEL_BY_TYPE: Record<AccountTypeValue, string> = {
+  CHEQUING: 'Chequing',
+  SAVINGS: 'Savings',
+  TFSA: 'TFSA',
+  CREDIT_CARD: 'Credit Card',
+};
 
 router.use(verifyToken);
 
@@ -63,19 +75,41 @@ router.post(
       }
     }
 
+    if (SINGLE_INSTANCE_TYPES.has(type as AccountTypeValue)) {
+      const existing = await prisma.account.findFirst({ where: { userId: req.userId, type } });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ error: `You already have a ${LABEL_BY_TYPE[type as AccountTypeValue]} account.` });
+      }
+    }
+
     const accountNumberLast4 = await generateUniqueLast4();
 
-    const account = await prisma.account.create({
-      data: {
-        userId: req.userId!,
-        type,
-        name: typeof name === 'string' && name.trim() ? name.trim() : DEFAULT_NAME_BY_TYPE[type as AccountTypeValue],
-        balance: numericBalance,
-        creditLimit: numericCreditLimit,
-        accountNumberLast4,
-      },
-    });
-    res.status(201).json(shapeAccount(account));
+    try {
+      const account = await prisma.account.create({
+        data: {
+          userId: req.userId!,
+          type,
+          name: typeof name === 'string' && name.trim() ? name.trim() : DEFAULT_NAME_BY_TYPE[type as AccountTypeValue],
+          balance: numericBalance,
+          creditLimit: numericCreditLimit,
+          accountNumberLast4,
+        },
+      });
+      res.status(201).json(shapeAccount(account));
+    } catch (err) {
+      // Safety net for the (very unlikely) race between the check above and
+      // this insert: the partial unique index on (userId, type) catches it at
+      // the DB layer, and we surface the same friendly message rather than a
+      // raw 500.
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return res
+          .status(409)
+          .json({ error: `You already have a ${LABEL_BY_TYPE[type as AccountTypeValue]} account.` });
+      }
+      throw err;
+    }
   })
 );
 
